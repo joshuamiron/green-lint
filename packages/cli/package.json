@@ -1,0 +1,22 @@
+{
+  "name": "@green-lint/cli",
+  "version": "0.1.0",
+  "description": "Command-line interface for green-lint",
+  "bin": {
+    "green-lint": "./dist/cli.js"
+  },
+  "scripts": {
+    "build": "tsc",
+    "dev": "tsc --watch"
+  },
+  "dependencies": {
+    "@green-lint/core": "*",
+    "commander": "^11.0.0",
+    "chalk": "^4.1.2",
+    "glob": "^10.3.0"
+  },
+  "devDependencies": {
+    "typescript": "^5.0.0",
+    "@types/node": "^20.0.0"
+  }
+}
