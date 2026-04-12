@@ -1,7 +1,16 @@
-import { Pattern, AnalysisContext, Issue, UserConfig, CodeChange } from './types';
+import { Pattern, AnalysisContext, Issue, UserConfig } from './types';
 import { LazyLoadingPattern } from './patterns/lazy-loading';
 import { ModernFormatsPattern } from './patterns/modern-formats';
 import { ExcessiveDOMPattern } from './patterns/excessive-dom';
+import {
+  parseHTML,
+  serializeHTML,
+  createElement,
+  wrapElement,
+  getAttribute,
+  findAllImages,
+  getLocation,
+} from './utils/ast-helpers';
 
 /**
  * Main analysis engine
@@ -11,10 +20,9 @@ export class GreenLintEngine {
   
   constructor() {
     // Register all patterns
-    this.registerPattern(new LazyLoadingPattern());
     this.registerPattern(new ModernFormatsPattern());
+    this.registerPattern(new LazyLoadingPattern());
     this.registerPattern(new ExcessiveDOMPattern());
-    // ... register remaining 10 patterns
   }
   
   /**
@@ -61,7 +69,6 @@ export class GreenLintEngine {
       filePath,
       language: this.detectLanguage(filePath),
       config,
-      // AST/DOM would be parsed here in real implementation
     };
   }
   
@@ -78,50 +85,66 @@ export class GreenLintEngine {
     if (filePath.endsWith('.vue')) {
       return 'vue';
     }
-    return 'html';  // Default
+    return 'html';
   }
   
   /**
-   * Apply fixes to source code
-   */
+ * Apply fixes to source code using AST
+ */
   applyFixes(sourceCode: string, issues: Issue[]): string {
-    let modifiedCode = sourceCode;
+    // Parse HTML fresh
+    const ast = parseHTML(sourceCode);
     
-    // Sort issues by position (apply from end to start to preserve positions)
-    const sortedIssues = issues.sort((a, b) => {
-      return b.location.startLine - a.location.startLine;
-    });
+    // Group issues by pattern
+    const modernFormatIssues = issues.filter(i => i.patternId === 'modern-formats');
     
-    for (const issue of sortedIssues) {
-      const preferredFix = issue.fixes.find(f => f.isPreferred) || issue.fixes[0];
+    console.log(`Applying ${modernFormatIssues.length} modern format fixes...`);
+    
+    // Find all images in the fresh AST
+    const allImages = findAllImages(ast);
+    
+    console.log(`Found ${allImages.length} images in AST`);
+    
+    // Apply modern format fixes by matching positions
+    for (const issue of modernFormatIssues) {
+      // Find the image element at this position in the new AST
+      const imgElement = allImages.find(img => {
+        const loc = getLocation(img);
+        return loc && 
+              loc.line === issue.location.startLine &&
+              loc.column === issue.location.startColumn;
+      });
       
-      if (preferredFix) {
-        for (const change of preferredFix.changes) {
-          modifiedCode = this.applyChange(modifiedCode, change);
+      if (imgElement) {
+        const src = getAttribute(imgElement, 'src');
+        
+        if (src) {
+          console.log(`Fixing image at line ${issue.location.startLine}: ${src}`);
+          
+          // Create WebP source URL
+          const webpSrc = src.replace(/\.(jpg|jpeg|png)$/i, '.webp');
+          
+          // Create <source> element
+          const sourceElement = createElement('source', [
+            { name: 'srcset', value: webpSrc },
+            { name: 'type', value: 'image/webp' },
+          ]);
+          
+          // Wrap img in picture and add source
+          const picture = wrapElement(ast, imgElement, 'picture');
+          
+          if (picture && picture.childNodes) {
+            // Insert source before img
+            picture.childNodes.unshift(sourceElement as any);
+            console.log(`Created picture element for ${src}`);
+          }
         }
+      } else {
+        console.log(`Could not find image at line ${issue.location.startLine}`);
       }
     }
     
-    return modifiedCode;
-  }
-  
-  /**
-   * Apply a single code change
-   */
-  private applyChange(sourceCode: string, change: CodeChange): string {
-    const lines = sourceCode.split('\n');
-    
-    // Replace the specified range
-    const startLine = change.range.startLine - 1;
-    const endLine = change.range.endLine - 1;
-    
-    const before = lines.slice(0, startLine);
-    const after = lines.slice(endLine + 1);
-    
-    return [
-      ...before,
-      change.newText,
-      ...after,
-    ].join('\n');
+    // Serialize back to HTML
+    return serializeHTML(ast);
   }
 }

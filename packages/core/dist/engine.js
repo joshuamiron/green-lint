@@ -4,6 +4,7 @@ exports.GreenLintEngine = void 0;
 const lazy_loading_1 = require("./patterns/lazy-loading");
 const modern_formats_1 = require("./patterns/modern-formats");
 const excessive_dom_1 = require("./patterns/excessive-dom");
+const ast_helpers_1 = require("./utils/ast-helpers");
 /**
  * Main analysis engine
  */
@@ -11,10 +12,9 @@ class GreenLintEngine {
     constructor() {
         this.patterns = new Map();
         // Register all patterns
-        this.registerPattern(new lazy_loading_1.LazyLoadingPattern());
         this.registerPattern(new modern_formats_1.ModernFormatsPattern());
+        this.registerPattern(new lazy_loading_1.LazyLoadingPattern());
         this.registerPattern(new excessive_dom_1.ExcessiveDOMPattern());
-        // ... register remaining 10 patterns
     }
     /**
      * Register a pattern
@@ -47,7 +47,6 @@ class GreenLintEngine {
             filePath,
             language: this.detectLanguage(filePath),
             config,
-            // AST/DOM would be parsed here in real implementation
         };
     }
     /**
@@ -63,42 +62,55 @@ class GreenLintEngine {
         if (filePath.endsWith('.vue')) {
             return 'vue';
         }
-        return 'html'; // Default
+        return 'html';
     }
     /**
-     * Apply fixes to source code
-     */
+   * Apply fixes to source code using AST
+   */
     applyFixes(sourceCode, issues) {
-        let modifiedCode = sourceCode;
-        // Sort issues by position (apply from end to start to preserve positions)
-        const sortedIssues = issues.sort((a, b) => {
-            return b.location.startLine - a.location.startLine;
-        });
-        for (const issue of sortedIssues) {
-            const preferredFix = issue.fixes.find(f => f.isPreferred) || issue.fixes[0];
-            if (preferredFix) {
-                for (const change of preferredFix.changes) {
-                    modifiedCode = this.applyChange(modifiedCode, change);
+        // Parse HTML fresh
+        const ast = (0, ast_helpers_1.parseHTML)(sourceCode);
+        // Group issues by pattern
+        const modernFormatIssues = issues.filter(i => i.patternId === 'modern-formats');
+        console.log(`Applying ${modernFormatIssues.length} modern format fixes...`);
+        // Find all images in the fresh AST
+        const allImages = (0, ast_helpers_1.findAllImages)(ast);
+        console.log(`Found ${allImages.length} images in AST`);
+        // Apply modern format fixes by matching positions
+        for (const issue of modernFormatIssues) {
+            // Find the image element at this position in the new AST
+            const imgElement = allImages.find(img => {
+                const loc = (0, ast_helpers_1.getLocation)(img);
+                return loc &&
+                    loc.line === issue.location.startLine &&
+                    loc.column === issue.location.startColumn;
+            });
+            if (imgElement) {
+                const src = (0, ast_helpers_1.getAttribute)(imgElement, 'src');
+                if (src) {
+                    console.log(`Fixing image at line ${issue.location.startLine}: ${src}`);
+                    // Create WebP source URL
+                    const webpSrc = src.replace(/\.(jpg|jpeg|png)$/i, '.webp');
+                    // Create <source> element
+                    const sourceElement = (0, ast_helpers_1.createElement)('source', [
+                        { name: 'srcset', value: webpSrc },
+                        { name: 'type', value: 'image/webp' },
+                    ]);
+                    // Wrap img in picture and add source
+                    const picture = (0, ast_helpers_1.wrapElement)(ast, imgElement, 'picture');
+                    if (picture && picture.childNodes) {
+                        // Insert source before img
+                        picture.childNodes.unshift(sourceElement);
+                        console.log(`Created picture element for ${src}`);
+                    }
                 }
             }
+            else {
+                console.log(`Could not find image at line ${issue.location.startLine}`);
+            }
         }
-        return modifiedCode;
-    }
-    /**
-     * Apply a single code change
-     */
-    applyChange(sourceCode, change) {
-        const lines = sourceCode.split('\n');
-        // Replace the specified range
-        const startLine = change.range.startLine - 1;
-        const endLine = change.range.endLine - 1;
-        const before = lines.slice(0, startLine);
-        const after = lines.slice(endLine + 1);
-        return [
-            ...before,
-            change.newText,
-            ...after,
-        ].join('\n');
+        // Serialize back to HTML
+        return (0, ast_helpers_1.serializeHTML)(ast);
     }
 }
 exports.GreenLintEngine = GreenLintEngine;

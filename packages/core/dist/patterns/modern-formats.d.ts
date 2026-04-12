@@ -1,5 +1,5 @@
 import { BasePattern } from './base-pattern';
-import { AnalysisContext, Issue, Fix } from '../types';
+import { AnalysisContext, Issue } from '../types';
 /**
  * Pattern: Serve Images in Modern Formats
  *
@@ -17,18 +17,5 @@ export declare class ModernFormatsPattern extends BasePattern {
         citation: string;
     };
     detect(context: AnalysisContext): Issue[];
-    generateFixes(issue: Issue): Fix[];
-    /**
-     * Find images using legacy formats (.jpg, .png)
-     */
-    private findLegacyFormatImages;
-    /**
-     * Check if image is already wrapped in <picture>
-     */
-    private isWrappedInPicture;
-    /**
-     * Wrap <img> in <picture> with WebP source
-     */
-    private wrapInPictureElement;
 }
 //# sourceMappingURL=modern-formats.d.ts.map

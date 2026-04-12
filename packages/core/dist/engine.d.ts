@@ -22,12 +22,8 @@ export declare class GreenLintEngine {
      */
     private detectLanguage;
     /**
-     * Apply fixes to source code
-     */
+   * Apply fixes to source code using AST
+   */
     applyFixes(sourceCode: string, issues: Issue[]): string;
-    /**
-     * Apply a single code change
-     */
-    private applyChange;
 }
 //# sourceMappingURL=engine.d.ts.map
