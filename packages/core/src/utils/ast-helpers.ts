@@ -1,4 +1,5 @@
 import * as parse5 from 'parse5';
+import * as prettier from 'prettier';
 import type { DefaultTreeAdapterMap } from 'parse5';
 
 type Element = DefaultTreeAdapterMap['element'];
@@ -19,10 +20,27 @@ export function parseHTML(html: string): Document {
 }
 
 /**
- * Serialize AST back to HTML
+ * Serialize AST back to HTML with proper formatting
  */
 export function serializeHTML(ast: Document): string {
-  return parse5.serialize(ast);
+  const rawHTML = parse5.serialize(ast);
+
+  // Format with prettier (synchronous)
+  try {
+    const formatted = prettier.format(rawHTML, {
+      parser: 'html',
+      printWidth: 100,
+      tabWidth: 2,
+      useTabs: false,
+    });
+    
+    // Handle both sync and async return
+    return typeof formatted === 'string' ? formatted : rawHTML;
+  } catch (error) {
+    // If formatting fails, return raw HTML
+    console.error('Prettier formatting failed:', error);
+    return rawHTML;
+  }
 }
 
 /**

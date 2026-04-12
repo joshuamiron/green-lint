@@ -48,6 +48,7 @@ exports.wrapElement = wrapElement;
 exports.insertBefore = insertBefore;
 exports.getLocation = getLocation;
 const parse5 = __importStar(require("parse5"));
+const prettier = __importStar(require("prettier"));
 /**
  * Parse HTML into AST
  */
@@ -57,10 +58,26 @@ function parseHTML(html) {
     });
 }
 /**
- * Serialize AST back to HTML
+ * Serialize AST back to HTML with proper formatting
  */
 function serializeHTML(ast) {
-    return parse5.serialize(ast);
+    const rawHTML = parse5.serialize(ast);
+    // Format with prettier (synchronous)
+    try {
+        const formatted = prettier.format(rawHTML, {
+            parser: 'html',
+            printWidth: 100,
+            tabWidth: 2,
+            useTabs: false,
+        });
+        // Handle both sync and async return
+        return typeof formatted === 'string' ? formatted : rawHTML;
+    }
+    catch (error) {
+        // If formatting fails, return raw HTML
+        console.error('Prettier formatting failed:', error);
+        return rawHTML;
+    }
 }
 /**
  * Check if node is an Element

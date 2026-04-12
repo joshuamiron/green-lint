@@ -10,7 +10,7 @@ type ParentNode = DefaultTreeAdapterMap['parentNode'];
  */
 export declare function parseHTML(html: string): Document;
 /**
- * Serialize AST back to HTML
+ * Serialize AST back to HTML with proper formatting
  */
 export declare function serializeHTML(ast: Document): string;
 /**

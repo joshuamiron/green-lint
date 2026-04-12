@@ -1,0 +1,25 @@
+<style>
+  img {
+    width: 300px;  /* Make them smaller */
+    height: 200px;
+    object-fit: cover;
+    display: block;
+    margin: 20px;
+  }
+</style>
+
+<h1>Lazy Loading Test</h1>
+<p>All 3 images should be visible in viewport on MacBook Air (1470×956)</p>
+
+<img src="https://picsum.photos/id/100/300/200.jpg" alt="Image 1 - No Lazy">
+<img src="https://picsum.photos/id/200/300/200.jpg" alt="Image 2 - Lazy" loading="lazy">
+<img src="https://picsum.photos/id/300/300/200.jpg" alt="Image 3 - Lazy" loading="lazy">
+
+<!-- Add spacer to push images below fold -->
+<div style="height: 2000px; background: linear-gradient(to bottom, white, lightgray);">
+  <p style="padding-top: 1000px;">Scroll down...</p>
+</div>
+
+<!-- These should definitely lazy load -->
+<img src="https://picsum.photos/id/400/300/200.jpg" alt="Image 4 - Below fold" loading="lazy">
+<img src="https://picsum.photos/id/500/300/200.jpg" alt="Image 5 - Below fold" loading="lazy">
