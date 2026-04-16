@@ -1,0 +1,57 @@
+{
+  "name": "green-lint-vscode",
+  "displayName": "Green Lint",
+  "description": "Energy saving linting tool based on empirical research",
+  "version": "0.1.0",
+  "publisher": "Joshua Miron",
+  "engines": {
+    "vscode": "^1.80.0"
+  },
+  "categories": [
+    "Linters"
+  ],
+  "activationEvents": [
+    "onLanguage:html"
+  ],
+  "main": "./dist/extension.js",
+  "contributes": {
+    "commands": [
+      {
+        "command": "green-lint.analyzeFile",
+        "title": "Green Lint: Analyze Current File"
+      },
+      {
+        "command": "green-lint.fixFile",
+        "title": "Green Lint: Fix All Issues in File"
+      }
+    ],
+    "configuration": {
+      "title": "Green Lint",
+      "properties": {
+        "greenLint.enabled": {
+          "type": "boolean",
+          "default": true,
+          "description": "Enable/disable Green Lint"
+        },
+        "greenLint.lazyLoadThreshold": {
+          "type": "number",
+          "default": 1,
+          "description": "Number of images to skip for lazy loading (default: 1)"
+        }
+      }
+    }
+  },
+  "scripts": {
+    "build": "tsc",
+    "watch": "tsc --watch",
+    "package": "vsce package"
+  },
+  "dependencies": {
+    "@green-lint/core": "*"
+  },
+  "devDependencies": {
+    "@types/node": "^20.19.39",
+    "@types/vscode": "^1.80.0",
+    "typescript": "^5.0.0"
+  }
+}

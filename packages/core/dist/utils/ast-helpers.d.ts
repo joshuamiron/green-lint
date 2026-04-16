@@ -12,7 +12,7 @@ export declare function parseHTML(html: string): Document;
 /**
  * Serialize AST back to HTML with proper formatting
  */
-export declare function serializeHTML(ast: Document): string;
+export declare function serializeHTML(ast: Document): Promise<string>;
 /**
  * Check if node is an Element
  */

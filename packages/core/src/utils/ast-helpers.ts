@@ -22,20 +22,27 @@ export function parseHTML(html: string): Document {
 /**
  * Serialize AST back to HTML with proper formatting
  */
-export function serializeHTML(ast: Document): string {
+export async function serializeHTML(ast: Document): Promise<string> {
   const rawHTML = parse5.serialize(ast);
 
-  // Format with prettier (synchronous)
+  console.log('Attempting to format HTML with prettier...');
+  console.log('Raw HTML length:', rawHTML.length);
+
+  // Format with prettier (async in v3+)
   try {
-    const formatted = prettier.format(rawHTML, {
+    const formatted = await prettier.format(rawHTML, {
       parser: 'html',
       printWidth: 100,
       tabWidth: 2,
       useTabs: false,
     });
     
-    // Handle both sync and async return
-    return typeof formatted === 'string' ? formatted : rawHTML;
+    console.log('Formatted HTML length:', formatted.length);
+    console.log('First 200 chars of formatted:', formatted.substring(0, 200));
+    console.log('Prettier formatting successful!');
+
+    return formatted;
+
   } catch (error) {
     // If formatting fails, return raw HTML
     console.error('Prettier formatting failed:', error);

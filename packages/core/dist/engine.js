@@ -65,20 +65,39 @@ class GreenLintEngine {
         return 'html';
     }
     /**
-   * Apply fixes to source code using AST
-   */
-    applyFixes(sourceCode, issues) {
+    * Apply fixes to source code using AST
+    */
+    async applyFixes(sourceCode, issues) {
         // Parse HTML fresh
         const ast = (0, ast_helpers_1.parseHTML)(sourceCode);
         // Group issues by pattern
         const modernFormatIssues = issues.filter(i => i.patternId === 'modern-formats');
+        const lazyLoadingIssues = issues.filter(i => i.patternId === 'lazy-loading');
+        console.log(`Applying ${lazyLoadingIssues.length} lazy loading fixes...`);
         console.log(`Applying ${modernFormatIssues.length} modern format fixes...`);
         // Find all images in the fresh AST
         const allImages = (0, ast_helpers_1.findAllImages)(ast);
         console.log(`Found ${allImages.length} images in AST`);
-        // Apply modern format fixes by matching positions
+        // STEP 1: Apply lazy loading fixes FIRST (before wrapping in picture)
+        for (const issue of lazyLoadingIssues) {
+            const imgElement = allImages.find(img => {
+                const loc = (0, ast_helpers_1.getLocation)(img);
+                return loc &&
+                    loc.line === issue.location.startLine &&
+                    loc.column === issue.location.startColumn;
+            });
+            if (imgElement) {
+                const src = (0, ast_helpers_1.getAttribute)(imgElement, 'src');
+                console.log(`Adding lazy loading at line ${issue.location.startLine}: ${src}`);
+                // Add loading="lazy" attribute
+                (0, ast_helpers_1.setAttribute)(imgElement, 'loading', 'lazy');
+            }
+            else {
+                console.log(`Could not find image at line ${issue.location.startLine} for lazy loading`);
+            }
+        }
+        // STEP 2: Apply modern format fixes (wraps elements in picture)
         for (const issue of modernFormatIssues) {
-            // Find the image element at this position in the new AST
             const imgElement = allImages.find(img => {
                 const loc = (0, ast_helpers_1.getLocation)(img);
                 return loc &&
@@ -90,7 +109,13 @@ class GreenLintEngine {
                 if (src) {
                     console.log(`Fixing image at line ${issue.location.startLine}: ${src}`);
                     // Create WebP source URL
-                    const webpSrc = src.replace(/\.(jpg|jpeg|png)$/i, '.webp');
+                    let webpSrc;
+                    if (src.includes('unsplash.com')) {
+                        webpSrc = src.replace(/[&?]fm=jpg/, '&fm=webp');
+                    }
+                    else {
+                        webpSrc = src.replace(/\.(jpg|jpeg|png)$/i, '.webp');
+                    }
                     // Create <source> element
                     const sourceElement = (0, ast_helpers_1.createElement)('source', [
                         { name: 'srcset', value: webpSrc },
@@ -99,7 +124,6 @@ class GreenLintEngine {
                     // Wrap img in picture and add source
                     const picture = (0, ast_helpers_1.wrapElement)(ast, imgElement, 'picture');
                     if (picture && picture.childNodes) {
-                        // Insert source before img
                         picture.childNodes.unshift(sourceElement);
                         console.log(`Created picture element for ${src}`);
                     }
@@ -110,7 +134,7 @@ class GreenLintEngine {
             }
         }
         // Serialize back to HTML
-        return (0, ast_helpers_1.serializeHTML)(ast);
+        return await (0, ast_helpers_1.serializeHTML)(ast); // ADD await
     }
 }
 exports.GreenLintEngine = GreenLintEngine;

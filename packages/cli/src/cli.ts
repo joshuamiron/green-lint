@@ -113,7 +113,7 @@ program
       const issues = await engine.analyzeFile(file, sourceCode);
       
       if (issues.length > 0) {
-        const fixedCode = engine.applyFixes(sourceCode, issues);
+        const fixedCode = await engine.applyFixes(sourceCode, issues);
         
         if (!options.dryRun) {
           writeFileSync(file, fixedCode, 'utf-8');

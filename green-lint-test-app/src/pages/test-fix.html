@@ -1,157 +1,195 @@
-<!DOCTYPE html><html lang="en"><head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Green Lint Test - Unoptimized</title>
-  
-  <!-- ISSUE: Unminified CSS with lots of whitespace and comments -->
-  <style>
-    /* Container styles */
-    .container {
-      max-width: 1200px;
-      margin: 0 auto;
-      padding: 20px;
-      background-color: #ffffff;
-    }
-    
-    /* Header styles */
-    .header {
-      text-align: center;
-      margin-bottom: 40px;
-      color: #333333;
-    }
-    
-    /* Gallery grid */
-    .gallery {
-      display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
-      gap: 20px;
-      margin-bottom: 40px;
-    }
-    
-    /* Image container */
-    .image-container {
-      border: 1px solid #dddddd;
-      border-radius: 8px;
-      padding: 10px;
-      background-color: #f9f9f9;
-    }
-    
-    /* Image styles */
-    .image-container img {
-      width: 100%;
-      height: auto;
-      display: block;
-      border-radius: 4px;
-    }
-  </style>
-</head>
-<body>
-  <div class="container">
-    <!-- ISSUE: Excessive DOM - unnecessary nested wrappers -->
-    <div class="wrapper-outer">
-      <div class="wrapper-middle">
-        <div class="wrapper-inner">
-          <div class="header-container">
-            <div class="header-wrapper">
-              <h1 class="header">Green Lint Test Page - Unoptimized Version</h1>
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Green Lint Test - Unoptimized</title>
+
+    <!-- ISSUE: Unminified CSS with lots of whitespace and comments -->
+    <style>
+      /* Container styles */
+      .container {
+        max-width: 1200px;
+        margin: 0 auto;
+        padding: 20px;
+        background-color: #ffffff;
+      }
+
+      /* Header styles */
+      .header {
+        text-align: center;
+        margin-bottom: 40px;
+        color: #333333;
+      }
+
+      /* Gallery grid */
+      .gallery {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+        gap: 20px;
+        margin-bottom: 40px;
+      }
+
+      /* Image container */
+      .image-container {
+        border: 1px solid #dddddd;
+        border-radius: 8px;
+        padding: 10px;
+        background-color: #f9f9f9;
+      }
+
+      /* Image styles */
+      .image-container img {
+        width: 100%;
+        height: auto;
+        display: block;
+        border-radius: 4px;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <!-- ISSUE: Excessive DOM - unnecessary nested wrappers -->
+      <div class="wrapper-outer">
+        <div class="wrapper-middle">
+          <div class="wrapper-inner">
+            <div class="header-container">
+              <div class="header-wrapper">
+                <h1 class="header">Green Lint Test Page - Unoptimized Version</h1>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="description-wrapper">
+        <div class="description-container">
+          <p>This page contains multiple green software anti-patterns for testing the linter.</p>
+        </div>
+      </div>
+
+      <div class="gallery">
+        <!-- ISSUE 1: No lazy loading -->
+        <!-- ISSUE 2: Using JPEG instead of modern formats (WebP/AVIF) -->
+        <!-- ISSUE 3: These are above the fold, so lazy loading not needed, but modern formats still helpful -->
+
+        <div class="image-container">
+          <picture
+            ><source srcset="https://picsum.photos/id/100/400/300.webp" type="image/webp" />
+            <img src="https://picsum.photos/id/100/400/300.jpg" alt="Landscape 1"
+          /></picture>
+          <p>Image 1 - JPEG format, no lazy loading</p>
+        </div>
+
+        <div class="image-container">
+          <picture
+            ><source srcset="https://picsum.photos/id/200/400/300.webp" type="image/webp" />
+            <img src="https://picsum.photos/id/200/400/300.jpg" alt="Landscape 2" loading="lazy"
+          /></picture>
+          <p>Image 2 - JPEG format, no lazy loading</p>
+        </div>
+
+        <div class="image-container">
+          <picture
+            ><source srcset="https://picsum.photos/id/300/400/300.webp" type="image/webp" />
+            <img src="https://picsum.photos/id/300/400/300.jpg" alt="Landscape 3" loading="lazy"
+          /></picture>
+          <p>Image 3 - JPEG format, no lazy loading</p>
+        </div>
+
+        <!-- ISSUE 4: Oversized image (loading 2000×1500 but displaying at 400×300) -->
+        <div class="image-container">
+          <picture
+            ><source srcset="https://picsum.photos/id/400/2000/1500.webp" type="image/webp" />
+            <img
+              src="https://picsum.photos/id/400/2000/1500.jpg"
+              style="width: 400px; height: 300px"
+              alt="Oversized image"
+              loading="lazy"
+          /></picture>
+          <p>Image 4 - Oversized (2000×1500 → 400×300)</p>
+        </div>
+
+        <!-- Below the fold images - ISSUE: Should have loading="lazy" -->
+
+        <div class="image-container">
+          <picture
+            ><source srcset="https://picsum.photos/id/500/400/300.webp" type="image/webp" />
+            <img src="https://picsum.photos/id/500/400/300.jpg" alt="Landscape 5" loading="lazy"
+          /></picture>
+          <p>Image 5 - Below fold, no lazy loading</p>
+        </div>
+
+        <div class="image-container">
+          <picture
+            ><source srcset="https://picsum.photos/id/600/400/300.webp" type="image/webp" />
+            <img src="https://picsum.photos/id/600/400/300.jpg" alt="Landscape 6" loading="lazy"
+          /></picture>
+          <p>Image 6 - Below fold, no lazy loading</p>
+        </div>
+
+        <div class="image-container">
+          <picture
+            ><source srcset="https://picsum.photos/id/700/400/300.webp" type="image/webp" />
+            <img src="https://picsum.photos/id/700/400/300.jpg" alt="Landscape 7" loading="lazy"
+          /></picture>
+          <p>Image 7 - Below fold, no lazy loading</p>
+        </div>
+
+        <div class="image-container">
+          <picture
+            ><source srcset="https://picsum.photos/id/800/400/300.webp" type="image/webp" />
+            <img src="https://picsum.photos/id/800/400/300.jpg" alt="Landscape 8" loading="lazy"
+          /></picture>
+          <p>Image 8 - Below fold, no lazy loading</p>
+        </div>
+
+        <div class="image-container">
+          <picture
+            ><source srcset="https://picsum.photos/id/900/400/300.webp" type="image/webp" />
+            <img src="https://picsum.photos/id/900/400/300.jpg" alt="Landscape 9" loading="lazy"
+          /></picture>
+          <p>Image 9 - Below fold, no lazy loading</p>
+        </div>
+
+        <div class="image-container">
+          <picture
+            ><source srcset="https://picsum.photos/id/1000/400/300.webp" type="image/webp" />
+            <img src="https://picsum.photos/id/1000/400/300.jpg" alt="Landscape 10" loading="lazy"
+          /></picture>
+          <p>Image 10 - Below fold, no lazy loading</p>
+        </div>
+      </div>
+
+      <!-- More content to push images below fold -->
+      <div class="spacer" style="height: 500px">
+        <h2>More Content</h2>
+        <p>This content helps ensure the images above are truly below the fold.</p>
+      </div>
+
+      <!-- ISSUE: More excessive DOM nesting -->
+      <div class="footer-wrapper">
+        <div class="footer-container">
+          <div class="footer-inner">
+            <div class="footer-content">
+              <footer>
+                <p>Test page for Green Lint - Energy-aware code analysis</p>
+              </footer>
             </div>
           </div>
         </div>
       </div>
     </div>
-    
-    <div class="description-wrapper">
-      <div class="description-container">
-        <p>This page contains multiple green software anti-patterns for testing the linter.</p>
-      </div>
-    </div>
-    
-    <div class="gallery">
-      <!-- ISSUE 1: No lazy loading -->
-      <!-- ISSUE 2: Using JPEG instead of modern formats (WebP/AVIF) -->
-      <!-- ISSUE 3: These are above the fold, so lazy loading not needed, but modern formats still helpful -->
-      
-      <div class="image-container">
-        <picture><source srcset="https://picsum.photos/id/100/400/300.webp" type="image/webp"><img src="https://picsum.photos/id/100/400/300.jpg" alt="Landscape 1"></picture>
-        <p>Image 1 - JPEG format, no lazy loading</p>
-      </div>
-      
-      <div class="image-container">
-        <picture><source srcset="https://picsum.photos/id/200/400/300.webp" type="image/webp"><img src="https://picsum.photos/id/200/400/300.jpg" alt="Landscape 2"></picture>
-        <p>Image 2 - JPEG format, no lazy loading</p>
-      </div>
-      
-      <div class="image-container">
-        <picture><source srcset="https://picsum.photos/id/300/400/300.webp" type="image/webp"><img src="https://picsum.photos/id/300/400/300.jpg" alt="Landscape 3"></picture>
-        <p>Image 3 - JPEG format, no lazy loading</p>
-      </div>
-      
-      <!-- ISSUE 4: Oversized image (loading 2000×1500 but displaying at 400×300) -->
-      <div class="image-container">
-        <picture><source srcset="https://picsum.photos/id/400/2000/1500.webp" type="image/webp"><img src="https://picsum.photos/id/400/2000/1500.jpg" style="width: 400px; height: 300px;" alt="Oversized image"></picture>
-        <p>Image 4 - Oversized (2000×1500 → 400×300)</p>
-      </div>
-      
-      <!-- Below the fold images - ISSUE: Should have loading="lazy" -->
-      
-      <div class="image-container">
-        <picture><source srcset="https://picsum.photos/id/500/400/300.webp" type="image/webp"><img src="https://picsum.photos/id/500/400/300.jpg" alt="Landscape 5"></picture>
-        <p>Image 5 - Below fold, no lazy loading</p>
-      </div>
-      
-      <div class="image-container">
-        <picture><source srcset="https://picsum.photos/id/600/400/300.webp" type="image/webp"><img src="https://picsum.photos/id/600/400/300.jpg" alt="Landscape 6"></picture>
-        <p>Image 6 - Below fold, no lazy loading</p>
-      </div>
-      
-      <div class="image-container">
-        <picture><source srcset="https://picsum.photos/id/700/400/300.webp" type="image/webp"><img src="https://picsum.photos/id/700/400/300.jpg" alt="Landscape 7"></picture>
-        <p>Image 7 - Below fold, no lazy loading</p>
-      </div>
-      
-      <div class="image-container">
-        <picture><source srcset="https://picsum.photos/id/800/400/300.webp" type="image/webp"><img src="https://picsum.photos/id/800/400/300.jpg" alt="Landscape 8"></picture>
-        <p>Image 8 - Below fold, no lazy loading</p>
-      </div>
-      
-      <div class="image-container">
-        <picture><source srcset="https://picsum.photos/id/900/400/300.webp" type="image/webp"><img src="https://picsum.photos/id/900/400/300.jpg" alt="Landscape 9"></picture>
-        <p>Image 9 - Below fold, no lazy loading</p>
-      </div>
-      
-      <div class="image-container">
-        <picture><source srcset="https://picsum.photos/id/1000/400/300.webp" type="image/webp"><img src="https://picsum.photos/id/1000/400/300.jpg" alt="Landscape 10"></picture>
-        <p>Image 10 - Below fold, no lazy loading</p>
-      </div>
-    </div>
-    
-    <!-- More content to push images below fold -->
-    <div class="spacer" style="height: 500px;">
-      <h2>More Content</h2>
-      <p>This content helps ensure the images above are truly below the fold.</p>
-    </div>
-    
-    <!-- ISSUE: More excessive DOM nesting -->
-    <div class="footer-wrapper">
-      <div class="footer-container">
-        <div class="footer-inner">
-          <div class="footer-content">
-            <footer>
-              <p>Test page for Green Lint - Energy-aware code analysis</p>
-            </footer>
-          </div>
-        </div>
-      </div>
-    </div>
-  </div>
-  
-  <!-- ISSUE: Third-party scripts (analytics, tracking) -->
-  <script async="" src="https://www.googletagmanager.com/gtag/js?id=UA-XXXXXXXXX-X"></script>
-  <script>
-    window.dataLayer = window.dataLayer || [];
-    function gtag(){dataLayer.push(arguments);}
-    gtag('js', new Date());
-    gtag('config', 'UA-XXXXXXXXX-X');
-  </script>
 
-</body></html>
+    <!-- ISSUE: Third-party scripts (analytics, tracking) -->
+    <script async="" src="https://www.googletagmanager.com/gtag/js?id=UA-XXXXXXXXX-X"></script>
+    <script>
+      window.dataLayer = window.dataLayer || [];
+      function gtag() {
+        dataLayer.push(arguments);
+      }
+      gtag("js", new Date());
+      gtag("config", "UA-XXXXXXXXX-X");
+    </script>
+  </body>
+</html>
