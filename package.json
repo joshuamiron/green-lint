@@ -2,7 +2,7 @@
   "name": "green-lint",
   "version": "0.1.0",
   "private": true,
-  "description": "Energy saving linting tool based on empirical research",
+  "description": "Green software patterns analysis tool",
   "workspaces": [
     "packages/*"
   ],

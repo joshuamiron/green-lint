@@ -1,0 +1,15 @@
+{
+"name": "lighthouse-plugin-green-lint",
+  "version": "0.1.0",
+  "description": "Lighthouse plugin for green-lint",
+  "main": "plugin.js",
+  "keywords": [
+    "lighthouse",
+    "lighthouse-plugin",
+    "green-software",
+    "energy-efficiency"
+  ],
+  "peerDependencies": {
+    "lighthouse": "^11.0.0"
+  }
+}

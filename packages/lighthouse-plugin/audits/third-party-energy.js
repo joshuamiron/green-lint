@@ -15,29 +15,36 @@ class ThirdPartyEnergyAudit extends Audit {
       description: 'Analytics, ads, and tracking scripts can consume 30-50% of page energy. ' +
                    'Minimize or defer non-essential third-party scripts.',
       
-      requiredArtifacts: ['devtoolsLogs'],
+      requiredArtifacts: ['devtoolsLogs', 'URL'],
     };
   }
   
   static audit(artifacts) {
     const devtoolsLog = artifacts.devtoolsLogs.defaultPass;
-    const networkRecords = /* extract network records */;
+    const pageUrl = artifacts.URL.finalDisplayedUrl;
+    
+    // Extract network requests from devtools log
+    const networkRecords = devtoolsLog
+      .filter(entry => entry.method === 'Network.responseReceived')
+      .map(entry => entry.params.response);
     
     // Identify third-party requests
     const thirdPartyRequests = networkRecords.filter(record => {
-      return this.isThirdParty(record.url, artifacts.URL.finalUrl);
+      return this.isThirdParty(record.url, pageUrl);
     });
     
     // Calculate total third-party bytes
     const thirdPartyBytes = thirdPartyRequests.reduce((sum, req) => {
-      return sum + (req.transferSize || 0);
+      return sum + (req.encodedDataLength || 0);
     }, 0);
     
     const totalBytes = networkRecords.reduce((sum, req) => {
-      return sum + (req.transferSize || 0);
+      return sum + (req.encodedDataLength || 0);
     }, 0);
     
-    const thirdPartyPercentage = (thirdPartyBytes / totalBytes * 100).toFixed(1);
+    const thirdPartyPercentage = totalBytes > 0 
+      ? (thirdPartyBytes / totalBytes * 100).toFixed(1) 
+      : 0;
     
     // Score based on percentage
     // 0-10% = Good (score 1)
@@ -46,6 +53,9 @@ class ThirdPartyEnergyAudit extends Audit {
     let score = 1;
     if (thirdPartyPercentage > 30) score = 0;
     else if (thirdPartyPercentage > 10) score = 0.5;
+    
+    // Group by domain
+    const grouped = this.groupByDomain(thirdPartyRequests);
     
     return {
       score,
@@ -61,37 +71,45 @@ class ThirdPartyEnergyAudit extends Audit {
           { key: 'size', itemType: 'bytes', text: 'Transfer Size' },
           { key: 'purpose', itemType: 'text', text: 'Purpose' },
         ],
-        items: this.groupByDomain(thirdPartyRequests),
+        items: grouped,
       },
     };
   }
   
   static isThirdParty(url, pageUrl) {
-    const urlDomain = new URL(url).hostname;
-    const pageDomain = new URL(pageUrl).hostname;
-    return urlDomain !== pageDomain;
+    try {
+      const urlDomain = new URL(url).hostname;
+      const pageDomain = new URL(pageUrl).hostname;
+      return urlDomain !== pageDomain;
+    } catch (e) {
+      return false;
+    }
   }
   
   static groupByDomain(requests) {
     const grouped = {};
     
     for (const req of requests) {
-      const domain = new URL(req.url).hostname;
-      
-      if (!grouped[domain]) {
-        grouped[domain] = {
-          domain,
-          requests: 0,
-          size: 0,
-          purpose: this.guessPurpose(domain),
-        };
+      try {
+        const domain = new URL(req.url).hostname;
+        
+        if (!grouped[domain]) {
+          grouped[domain] = {
+            domain,
+            requests: 0,
+            size: 0,
+            purpose: this.guessPurpose(domain),
+          };
+        }
+        
+        grouped[domain].requests++;
+        grouped[domain].size += req.encodedDataLength || 0;
+      } catch (e) {
+        // Skip invalid URLs
       }
-      
-      grouped[domain].requests++;
-      grouped[domain].size += req.transferSize || 0;
     }
     
-    return Object.values(grouped);
+    return Object.values(grouped).sort((a, b) => b.size - a.size);
   }
   
   static guessPurpose(domain) {
