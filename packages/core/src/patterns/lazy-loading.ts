@@ -19,11 +19,12 @@ export class LazyLoadingPattern extends BasePattern {
   description = 'Add loading="lazy" to defer loading of offscreen images';
 
   research = {
-    measuredNetworkReduction: '88% (study conditions)',
-    measuredCpuImpact: '+20% (study conditions)',
-    pValue: 0.008,
+    cpuImpact: '20% increase (study conditions)',
+    cpuPValue: '0.0008 (statistically significant)',
+    networkImpact: '88% reduction (study conditions)',
+    networkPValue: '0.008 (statistically significant)',
     sampleSize: 5,
-    citation: 'Miron, 2026', // TODO: exact section
+    citation: 'Miron, "Developing a Framework for Retroactively Applying Green Software Enginnering Patterns to React Applications", Section 5.1, 2026',
   };
   
   detect(context: AnalysisContext): Issue[] {

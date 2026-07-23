@@ -75,11 +75,12 @@ export interface Pattern {
   
   // Empirical evidence from the underlying study
   research: {
-    measuredNetworkReduction?: string; // e.g., "88% (measured under study conditions)"
-    measuredCpuImpact?: string;        // e.g., "+20% (measured under study conditions)"
-    pValue?: number;             // e.g., 0.008
-    sampleSize?: number;         // e.g., 5
-    citation?: string;           // Reference to the underlying study
+    cpuImpact?: string;     // e.g., "50% increase (measured under study conditions)"
+    cpuPValue?: string;     // e.g., "0.05 (statistically significant)"
+    networkImpact?: string; // e.g., "50% reduction (measured under study conditions)"
+    networkPValue?: string; // e.g., "0.05 (statistically significant)"
+    sampleSize?: number;    // e.g., 5
+    citation?: string;      // Reference to the underlying study
   };
   
   // Detection logic

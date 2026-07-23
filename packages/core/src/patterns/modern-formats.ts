@@ -22,11 +22,10 @@ export class ModernFormatsPattern extends BasePattern {
   description = 'Use modern image formats (WebP/AVIF) with fallback to JPEG/PNG';
 
   research = {
-    measuredNetworkReduction: '22.4% (study conditions)',
-    pValue: 0.00045,
+    networkImpact: '22.4% reduction (study conditions)',
+    networkPValue: '0.00045 (statistically significant)',
     sampleSize: 8,
-    citation: 'Miron, 2026', // TODO: exact section
-  };
+citation: 'Miron, "Developing a Framework for Retroactively Applying Green Software Enginnering Patterns to React Applications", Section 5.1, 2026',  };
   
   detect(context: AnalysisContext): Issue[] {
     const issues: Issue[] = [];
