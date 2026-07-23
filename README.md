@@ -10,11 +10,11 @@ Web applications consume significant energy through inefficient coding practices
 
 ### Key Benefits
 
-- 🌍 **Evidence-Based** - All patterns backed by empirical research with cited sources
-- ⚡ **Performance Improvements** - Energy savings often correlate with faster load times
-- 🔧 **Automatic Fixes** - Built-in solutions for common anti-patterns
-- 🛠️ **Multiple Interfaces** - CLI, VS Code extension, and Lighthouse plugin
-- 📊 **Detailed Reports** - Energy impact metrics and optimization guidance
+- **Evidence-Based** - All patterns backed by empirical research with cited sources
+- **Performance Improvements** - Energy savings often correlate with faster load times
+- **Automatic Fixes** - Built-in solutions for common anti-patterns
+- **Multiple Interfaces** - CLI, VS Code extension, and Lighthouse plugin
+- **Detailed Reports** - Energy impact metrics and optimization guidance
 
 ## Quick Start
 
@@ -45,16 +45,22 @@ green-lint src/ --severity error --fix
 
 The VS Code extension provides real-time analysis with editor integration:
 
-1. Install the extension from the VS Code Marketplace
-2. Open any HTML, JSX, or CSS file
-3. Issues appear with clickable fixes
+1. Open the `green-lint` folder in VS Code
+2. Press `F5` to launch an Extension Development Host
+3. Open any HTML, JSX, or CSS file
+4. Issues appear with clickable fixes
 
 ### Lighthouse Integration
 
 The Lighthouse plugin adds green software audits to your Lighthouse reports:
 
 ```bash
-lighthouse https://example.com --plugins=@green-lint/lighthouse-plugin
+# Link the plugin so Lighthouse can resolve it
+cd packages/lighthouse-plugin
+npm link
+
+# Run Lighthouse with the plugin
+lighthouse https://example.com --plugins=lighthouse-plugin-green-lint
 ```
 
 ## Patterns & Research
@@ -62,28 +68,25 @@ lighthouse https://example.com --plugins=@green-lint/lighthouse-plugin
 Green Lint detects the following energy-inefficient patterns:
 
 ### Lazy Loading Images
-**Impact**: 88% network reduction, 19.6% total energy savings
+
+**Measured**: Reduced network transfer for offscreen images
+
 - Detects images missing `loading="lazy"` attribute
 - Recommends lazy loading for offscreen images
-- [Research Source](./docs/research/lazy-loading.md)
 
 ### Excessive DOM Size
-**Impact**: Reduced memory usage and faster rendering
+
+**Measured**: No statistically significant energy impact (informational only)
+
 - Identifies DOM trees exceeding optimal size thresholds
 - Suggests simplification and component optimization
-- [Research Source](./docs/research/excessive-dom.md)
 
 ### Modern Format Usage
-**Impact**: Up to 80% file size reduction for images
+
+**Measured**: Reduced network transfer serving WebP instead of JPEG
+
 - Detects images not using modern formats (WebP, AVIF)
 - Recommends format conversion with responsive sizing
-- [Research Source](./docs/research/modern-formats.md)
-
-### Additional Patterns (Coming Soon)
-- Third-party script optimization
-- CSS minification detection
-- Font loading strategy analysis
-- Animation performance tuning
 
 ## Project Structure
 
@@ -100,8 +103,8 @@ green-lint/
 │   │   ├── src/
 │   │   │   └── cli.ts
 │   │   └── package.json
+│   ├── vscode-extension/  # VS Code extension
 │   └── lighthouse-plugin/ # Lighthouse integration
-├── vscode-extension/      # VS Code extension
 ├── green-lint-test-app/   # Example application
 └── package.json          # Root workspace config
 ```
@@ -195,43 +198,11 @@ See the [green-lint-test-app](./green-lint-test-app/) directory for complete exa
 - Bloated vs. clean DOM structures
 - Optimized vs. unoptimized galleries
 - Image lazy loading implementation
-- CSS minification examples
-
-## Contributing
-
-We welcome contributions! Please:
-
-1. Fork the repository
-2. Create a feature branch (`git checkout -b feature/your-feature`)
-3. Commit your changes
-4. Push to the branch
-5. Open a Pull Request
-
-### Adding a New Pattern
-
-1. Create a new file in `packages/core/src/patterns/`
-2. Extend `BasePattern` class
-3. Implement the `detect()` method
-4. Register in `engine.ts`
-5. Add tests in `green-lint-test-app/tests/patterns.test.js`
-
-[See Pattern Development Guide](./docs/PATTERN_DEVELOPMENT.md)
 
 ## License
 
 ISC
 
-## Resources
-
-- 📚 [Research Documentation](./docs/research/)
-- 🔬 [Methodology](./docs/METHODOLOGY.md)
-- 🐛 [Issue Tracker](https://github.com/yourusername/green-lint/issues)
-- 💬 [Discussions](https://github.com/yourusername/green-lint/discussions)
-
 ## Acknowledgments
 
-Green Lint is built on empirical research in green software engineering. Special thanks to all contributors and researchers in the sustainable computing community.
-
----
-
-**Made with 🌱 for a more sustainable web**
+Green Lint is built on empirical research in green software engineering.
