@@ -16,12 +16,11 @@ export interface Issue {
     endColumn: number;
   };
   
-  // Energy impact data (from your research!)
+  // Energy impact data (Empirical evidence from the underlying study)
   energyImpact: {
     level: 'high' | 'medium' | 'low';
-    metric: string;              // e.g., "88% network reduction"
-    estimatedSavings?: string;   // e.g., "100 mJ per page load"
-    source: string;              // Citation to your research
+    metric: string;              // e.g., "Reduces network transfer for offscreen images"
+    source: string;              // Citation to the underlying study
   };
   
   // The problematic code
@@ -56,7 +55,7 @@ export interface CodeChange {
 }
 
 /**
- * Pattern category type - DEFINE THIS FIRST
+ * Pattern category type
  */
 export type PatternCategory = 
   | 'images'
@@ -74,14 +73,13 @@ export interface Pattern {
   category: PatternCategory;
   description: string;
   
-  // Your research data
+  // Empirical evidence from the underlying study
   research: {
-    networkSavings?: string;     // e.g., "88%"
-    cpuImpact?: string;          // e.g., "+20%"
-    totalEnergySavings?: string; // e.g., "19.6%"
+    measuredNetworkReduction?: string; // e.g., "88% (measured under study conditions)"
+    measuredCpuImpact?: string;        // e.g., "+20% (measured under study conditions)"
     pValue?: number;             // e.g., 0.008
     sampleSize?: number;         // e.g., 5
-    citation?: string;           // Link to your dissertation section
+    citation?: string;           // Reference to the underlying study
   };
   
   // Detection logic
@@ -131,7 +129,7 @@ export interface UserConfig {
   thresholds?: {
     maxDOMNodes?: number;        // Default: 1500
     maxDOMDepth?: number;        // Default: 10
-    lazyLoadThreshold?: number;  // Pixels from top: 1000
+    lazyLoadThreshold?: number;  // Number of initial images to skip, default: 1
   };
   
   // Auto-fix preferences

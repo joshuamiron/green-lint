@@ -2,9 +2,9 @@ const Audit = require('lighthouse').Audit;
 
 /**
  * Audit: Check if offscreen images use lazy loading
- * 
- * Based on research: 88% network reduction (p<0.01)
- * 
+ *
+ * Based on study measurement: 88% network reduction under test conditions (p=0.008, n=5)
+ *
  * This audit checks ACTUAL viewport positions (impossible in static analysis!)
  */
 class LazyLoadingActualAudit extends Audit {
@@ -13,13 +13,11 @@ class LazyLoadingActualAudit extends Audit {
       id: 'lazy-loading-actual',
       title: 'Offscreen images use lazy loading',
       failureTitle: 'Offscreen images should use lazy loading',
-      description: 'Images below the fold should have `loading="lazy"` to reduce initial network transfer. ' +
-                   'Research shows 88% network reduction for offscreen images.',
-      
-      // Your dissertation citation!
-      helpText: 'Based on empirical testing showing 88% network savings (p=0.008, n=5). ' +
-                '[Learn more](https://your-dissertation-url)',
-      
+      description: 'Deferring offscreen images reduces network transfer during page load.',
+
+      helpText: 'A controlled study measured an 88% network reduction for offscreen images under test conditions ' +
+                '(p=0.008, n=5). Actual savings depend on the number and size of offscreen images.',
+
       requiredArtifacts: ['ImageElements', 'ViewportDimensions'],
     };
   }
@@ -73,9 +71,8 @@ class LazyLoadingActualAudit extends Audit {
       return sum + (img.resourceSize || 0);
     }, 0);
     
-    // 88% savings from research
-    const energySavingsBytes = totalImageSize * 0.88;
-    const energySavingsKB = (energySavingsBytes / 1024).toFixed(0);
+    const deferredBytes = totalImageSize;
+    const deferredKB = (deferredBytes / 1024).toFixed(0);
     
     // Pass/fail
     const passed = offscreenImages.length === 0;
@@ -98,16 +95,16 @@ class LazyLoadingActualAudit extends Audit {
           { key: 'savings', itemType: 'text', text: 'Potential Savings' },
         ],
         items: offscreenImages.map(({ img, position }) => {
-          const sizeSavings = ((img.resourceSize || 0) * 0.88 / 1024).toFixed(1);
+          const imgDeferredKB = ((img.resourceSize || 0) / 1024).toFixed(1);
           return {
             url: img.src,
             position: `${position.toFixed(0)}px (${(position - viewport.innerHeight).toFixed(0)}px below fold)`,
             size: img.resourceSize || 0,
-            savings: `~${sizeSavings} KB (88%)`,
+            savings: `~${imgDeferredKB} KB deferred`,
           };
         }),
         summary: {
-          wastedBytes: energySavingsBytes,
+          wastedBytes: deferredBytes,
         },
       },
     };

@@ -4,9 +4,6 @@ exports.ExcessiveDOMPattern = void 0;
 const base_pattern_1 = require("./base-pattern");
 /**
  * Pattern: Avoid Excessive DOM Size
- *
- * Based on research showing minimal CPU impact for static content,
- * but still a best practice for maintainability
  */
 class ExcessiveDOMPattern extends base_pattern_1.BasePattern {
     constructor() {
@@ -16,9 +13,10 @@ class ExcessiveDOMPattern extends base_pattern_1.BasePattern {
         this.category = 'dom';
         this.description = 'Reduce DOM complexity by removing unnecessary wrapper elements';
         this.research = {
-            cpuImpact: '-7.6% (not significant, p=0.162)',
+            measuredCpuImpact: '7.6% reduction (study conditions)',
+            pValue: 0.162,
             sampleSize: 10,
-            citation: 'Your Dissertation, Section 4.2.2',
+            citation: 'Miron, 2026', // TODO: exact section
         };
     }
     detect(context) {
@@ -37,7 +35,7 @@ class ExcessiveDOMPattern extends base_pattern_1.BasePattern {
                 endLine: 1,
                 endColumn: 0,
             }, `DOM has ${totalNodes} nodes (recommended: <${maxNodes})`, {
-                level: 'low', // Your research showed minimal energy impact!
+                level: 'low',
                 metric: 'Minimal CPU impact for static content',
                 source: this.research.citation,
             }));

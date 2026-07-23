@@ -13,20 +13,19 @@ import {
 
 /**
  * Pattern: Serve Images in Modern Formats
- * 
- * Based on research showing 22.4% file size reduction (WebP vs JPEG)
+ * Based on study measurement: 22.4% file size reduction under test conditions
  */
 export class ModernFormatsPattern extends BasePattern {
   id = 'modern-formats';
   name = 'Serve Images in Modern Formats';
   category = 'images' as const;
   description = 'Use modern image formats (WebP/AVIF) with fallback to JPEG/PNG';
-  
+
   research = {
-    networkSavings: '22.4%',
+    measuredNetworkReduction: '22.4% (study conditions)',
     pValue: 0.00045,
     sampleSize: 8,
-    citation: 'Your Dissertation, Section 4.2.4',
+    citation: 'Miron, 2026', // TODO: exact section
   };
   
   detect(context: AnalysisContext): Issue[] {
@@ -63,8 +62,7 @@ export class ModernFormatsPattern extends BasePattern {
                 `Use <picture> element to serve modern formats (WebP/AVIF) with fallback`,
                 {
                   level: 'medium',
-                  metric: '22.4% file size reduction',
-                  estimatedSavings: '~23 KB per 6 images',
+                  metric: 'Reduces image transfer size via modern formats',
                   source: this.research.citation,
                 },
                 [{

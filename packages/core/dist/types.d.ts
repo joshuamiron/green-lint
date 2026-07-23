@@ -16,7 +16,6 @@ export interface Issue {
     energyImpact: {
         level: 'high' | 'medium' | 'low';
         metric: string;
-        estimatedSavings?: string;
         source: string;
     };
     snippet: string;
@@ -45,7 +44,7 @@ export interface CodeChange {
     newText: string;
 }
 /**
- * Pattern category type - DEFINE THIS FIRST
+ * Pattern category type
  */
 export type PatternCategory = 'images' | 'dom' | 'assets' | 'network' | 'performance';
 /**
@@ -57,9 +56,8 @@ export interface Pattern {
     category: PatternCategory;
     description: string;
     research: {
-        networkSavings?: string;
-        cpuImpact?: string;
-        totalEnergySavings?: string;
+        measuredNetworkReduction?: string;
+        measuredCpuImpact?: string;
         pValue?: number;
         sampleSize?: number;
         citation?: string;

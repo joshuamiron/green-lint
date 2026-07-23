@@ -10,22 +10,20 @@ import {
 
 /**
  * Pattern: Defer Offscreen Images (Lazy Loading)
- * 
- * Based on research showing 88% network reduction for offscreen images
+ * Based on study measurement: 88% network reduction under test conditions
  */
 export class LazyLoadingPattern extends BasePattern {
   id = 'lazy-loading';
   name = 'Defer Offscreen Images';
   category = 'images' as const;
   description = 'Add loading="lazy" to defer loading of offscreen images';
-  
+
   research = {
-    networkSavings: '88%',
-    cpuImpact: '+20%',
-    totalEnergySavings: '19.6%',
+    measuredNetworkReduction: '88% (study conditions)',
+    measuredCpuImpact: '+20% (study conditions)',
     pValue: 0.008,
     sampleSize: 5,
-    citation: 'Your Dissertation, Section 4.2.1',
+    citation: 'Miron, 2026', // TODO: exact section
   };
   
   detect(context: AnalysisContext): Issue[] {
@@ -64,11 +62,10 @@ export class LazyLoadingPattern extends BasePattern {
                 endLine: location.line,
                 endColumn: location.column + 50,
               },
-              `Add loading="lazy" to defer loading until needed (saves 88% network transfer)`,
+              `Add loading="lazy" to defer loading of offscreen images until needed`,
               {
                 level: 'high',
-                metric: '88% network reduction for offscreen images',
-                estimatedSavings: '~100 mJ per page load',
+                metric: 'Reduces network transfer for offscreen images',
                 source: this.research.citation,
               },
               [{

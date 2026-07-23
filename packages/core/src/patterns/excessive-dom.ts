@@ -3,9 +3,6 @@ import { AnalysisContext, Issue, Fix, DOMNode } from '../types';
 
 /**
  * Pattern: Avoid Excessive DOM Size
- * 
- * Based on research showing minimal CPU impact for static content,
- * but still a best practice for maintainability
  */
 export class ExcessiveDOMPattern extends BasePattern {
   id = 'excessive-dom';
@@ -14,9 +11,10 @@ export class ExcessiveDOMPattern extends BasePattern {
   description = 'Reduce DOM complexity by removing unnecessary wrapper elements';
   
   research = {
-    cpuImpact: '-7.6% (not significant, p=0.162)',
+    measuredCpuImpact: '7.6% reduction (study conditions)',
+    pValue: 0.162,
     sampleSize: 10,
-    citation: 'Your Dissertation, Section 4.2.2',
+    citation: 'Miron, 2026', // TODO: exact section
   };
   
   detect(context: AnalysisContext): Issue[] {
@@ -43,7 +41,7 @@ export class ExcessiveDOMPattern extends BasePattern {
           },
           `DOM has ${totalNodes} nodes (recommended: <${maxNodes})`,
           {
-            level: 'low',  // Your research showed minimal energy impact!
+            level: 'low',
             metric: 'Minimal CPU impact for static content',
             source: this.research.citation,
           }

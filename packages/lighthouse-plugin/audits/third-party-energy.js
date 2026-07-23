@@ -12,7 +12,7 @@ class ThirdPartyEnergyAudit extends Audit {
       id: 'third-party-energy',
       title: 'Third-party scripts have minimal energy impact',
       failureTitle: 'Third-party scripts consume significant energy',
-      description: 'Analytics, ads, and tracking scripts can consume 30-50% of page energy. ' +
+      description: 'Analytics, ads, and tracking scripts can consume a significant share of page energy. ' +
                    'Minimize or defer non-essential third-party scripts.',
       
       requiredArtifacts: ['devtoolsLogs', 'URL'],

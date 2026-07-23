@@ -2,8 +2,8 @@ const Audit = require('lighthouse').Audit;
 
 /**
  * Audit: Check if images use modern formats
- * 
- * Based on research: 22.4% file size reduction (p=0.00045)
+ *
+ * Based on study measurement: 22.4% file size reduction under test conditions (p=0.00045)
  */
 class ModernFormatsActualAudit extends Audit {
   static get meta() {
@@ -11,9 +11,9 @@ class ModernFormatsActualAudit extends Audit {
       id: 'modern-formats-actual',
       title: 'Images use modern formats',
       failureTitle: 'Images should use modern formats (WebP/AVIF)',
-      description: 'Serving images in modern formats like WebP or AVIF can reduce file sizes by 20-30%. ' +
-                   'Based on research showing 22.4% reduction (p<0.001).',
-      
+      description: 'Serving images in modern formats such as WebP or AVIF reduces file sizes. ' +
+                   'A controlled study measured a 22.4% reduction serving WebP instead of JPEG under test conditions (p<0.001).',
+
       requiredArtifacts: ['ImageElements'],
     };
   }
@@ -49,13 +49,11 @@ class ModernFormatsActualAudit extends Audit {
       }
     }
     
-    // Calculate savings (22.4% from research)
     const totalSize = legacyFormatImages.reduce((sum, img) => {
       return sum + (img.resourceSize || 0);
     }, 0);
-    
-    const potentialSavings = totalSize * 0.224; // 22.4% from research
-    const savingsKB = (potentialSavings / 1024).toFixed(0);
+
+    const legacyFormatKB = (totalSize / 1024).toFixed(0);
     
     // Pass/fail
     const passed = legacyFormatImages.length === 0;
@@ -75,20 +73,19 @@ class ModernFormatsActualAudit extends Audit {
           { key: 'url', itemType: 'url', text: 'Image' },
           { key: 'format', itemType: 'text', text: 'Current Format' },
           { key: 'size', itemType: 'bytes', text: 'Size' },
-          { key: 'savings', itemType: 'text', text: 'Potential Savings' },
+          { key: 'savings', itemType: 'text', text: 'Legacy Format Size' },
         ],
         items: legacyFormatImages.map(img => {
-          const format = img.mimeType || 'JPEG/PNG';
-          const sizeSavings = ((img.resourceSize || 0) * 0.224 / 1024).toFixed(1);
+          const imgLegacyKB = ((img.resourceSize || 0) / 1024).toFixed(1);
           return {
             url: img.src,
-            format: format,
+            format: img.mimeType || 'JPEG/PNG',
             size: img.resourceSize || 0,
-            savings: `~${sizeSavings} KB (22.4%)`,
+            savings: `~${imgLegacyKB} KB in legacy format`,
           };
         }),
         summary: {
-          wastedBytes: potentialSavings,
+          wastedBytes: totalSize,
         },
       },
     };

@@ -2,8 +2,7 @@ import { BasePattern } from './base-pattern';
 import { AnalysisContext, Issue } from '../types';
 /**
  * Pattern: Serve Images in Modern Formats
- *
- * Based on research showing 22.4% file size reduction (WebP vs JPEG)
+ * Based on study measurement: 22.4% file size reduction under test conditions
  */
 export declare class ModernFormatsPattern extends BasePattern {
     id: string;
@@ -11,7 +10,7 @@ export declare class ModernFormatsPattern extends BasePattern {
     category: "images";
     description: string;
     research: {
-        networkSavings: string;
+        measuredNetworkReduction: string;
         pValue: number;
         sampleSize: number;
         citation: string;
