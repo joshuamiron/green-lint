@@ -24,6 +24,18 @@ export declare class GreenLintEngine {
     /**
     * Apply fixes to source code using AST
     */
-    applyFixes(sourceCode: string, issues: Issue[]): Promise<string>;
+    applyFixes(filePath: string, sourceCode: string, issues: Issue[]): Promise<string>;
+    /**
+     * Compute a WebP replacement for a legacy-format image src.
+     */
+    private computeWebPSrc;
+    /**
+     * Apply fixes to JSX/TSX source via targeted text splices computed from
+     * Babel node offsets, rather than mutating and re-serializing the whole
+     * AST (which would require a JSX-aware code generator and risks
+     * reformatting code well outside the fix itself).
+     */
+    private applyJSXFixes;
+    private applyHTMLFixes;
 }
 //# sourceMappingURL=engine.d.ts.map

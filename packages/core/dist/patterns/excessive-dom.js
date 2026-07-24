@@ -13,10 +13,10 @@ class ExcessiveDOMPattern extends base_pattern_1.BasePattern {
         this.category = 'dom';
         this.description = 'Reduce DOM complexity by removing unnecessary wrapper elements';
         this.research = {
-            measuredCpuImpact: '7.6% reduction (study conditions)',
-            pValue: 0.162,
+            cpuImpact: '7.6% reduction (study conditions)',
+            cpuPValue: '0.162 (not statistically significant)',
             sampleSize: 10,
-            citation: 'Miron, 2026', // TODO: exact section
+            citation: 'Miron, "Developing a Framework for Retroactively Applying Green Software Engineering Patterns to React Applications", Section 5.2, 2026',
         };
     }
     detect(context) {

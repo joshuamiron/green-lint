@@ -12,6 +12,14 @@ import {
   getLocation,
   setAttribute,
 } from './utils/ast-helpers';
+import {
+  parseJSX,
+  findAllJSXImages,
+  getJSXAttribute,
+  getJSXLocation,
+  jsxOpeningTagInsertionOffset,
+  JSXImage,
+} from './utils/jsx-ast-helpers';
 
 /**
  * Main analysis engine
@@ -77,7 +85,10 @@ export class GreenLintEngine {
    * Detect file language
    */
   private detectLanguage(filePath: string): AnalysisContext['language'] {
-    if (filePath.endsWith('.jsx') || filePath.endsWith('.tsx')) {
+    if (filePath.endsWith('.tsx')) {
+      return 'tsx';
+    }
+    if (filePath.endsWith('.jsx')) {
       return 'jsx';
     }
     if (filePath.endsWith('.html')) {
@@ -92,7 +103,88 @@ export class GreenLintEngine {
  /**
  * Apply fixes to source code using AST
  */
-  async applyFixes(sourceCode: string, issues: Issue[]): Promise<string> {
+  async applyFixes(filePath: string, sourceCode: string, issues: Issue[]): Promise<string> {
+    const language = this.detectLanguage(filePath);
+
+    if (language === 'jsx' || language === 'tsx') {
+      return this.applyJSXFixes(sourceCode, issues, language === 'tsx');
+    }
+
+    return this.applyHTMLFixes(sourceCode, issues);
+  }
+
+  /**
+   * Compute a WebP replacement for a legacy-format image src.
+   */
+  private computeWebPSrc(src: string): string {
+    if (src.includes('unsplash.com')) {
+      return src.replace(/[&?]fm=jpg/, '&fm=webp');
+    }
+    return src.replace(/\.(jpg|jpeg|png)$/i, '.webp');
+  }
+
+  /**
+   * Apply fixes to JSX/TSX source via targeted text splices computed from
+   * Babel node offsets, rather than mutating and re-serializing the whole
+   * AST (which would require a JSX-aware code generator and risks
+   * reformatting code well outside the fix itself).
+   */
+  private applyJSXFixes(sourceCode: string, issues: Issue[], isTypeScript: boolean): string {
+    const ast = parseJSX(sourceCode, isTypeScript);
+    const allImages = findAllJSXImages(ast);
+
+    const lazyLoadingIssues = issues.filter(i => i.patternId === 'lazy-loading');
+    const modernFormatIssues = issues.filter(i => i.patternId === 'modern-formats');
+
+    const findImage = (issue: Issue): JSXImage | undefined =>
+      allImages.find(img => {
+        const loc = getJSXLocation(img.openingElement);
+        return loc &&
+          loc.line === issue.location.startLine &&
+          loc.column === issue.location.startColumn;
+      });
+
+    // Each splice is applied at a fixed source offset. Since offsets are all
+    // computed against the original (untouched) source, applying them from
+    // the highest offset down keeps every earlier offset valid.
+    const splices: Array<{ offset: number; text: string }> = [];
+
+    for (const issue of lazyLoadingIssues) {
+      const img = findImage(issue);
+      if (img) {
+        splices.push({
+          offset: jsxOpeningTagInsertionOffset(img.openingElement),
+          text: ' loading="lazy"',
+        });
+      }
+    }
+
+    for (const issue of modernFormatIssues) {
+      const img = findImage(issue);
+      if (img) {
+        const src = getJSXAttribute(img.openingElement, 'src');
+        if (src) {
+          const webpSrc = this.computeWebPSrc(src);
+          splices.push({
+            offset: img.element.start!,
+            text: `<picture><source srcSet="${webpSrc}" type="image/webp" />`,
+          });
+          splices.push({ offset: img.element.end!, text: '</picture>' });
+        }
+      }
+    }
+
+    splices.sort((a, b) => b.offset - a.offset);
+
+    let result = sourceCode;
+    for (const splice of splices) {
+      result = result.slice(0, splice.offset) + splice.text + result.slice(splice.offset);
+    }
+
+    return result;
+  }
+
+  private async applyHTMLFixes(sourceCode: string, issues: Issue[]): Promise<string> {
     // Parse HTML fresh
     const ast = parseHTML(sourceCode);
     

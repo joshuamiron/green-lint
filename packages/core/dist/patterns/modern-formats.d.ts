@@ -10,11 +10,13 @@ export declare class ModernFormatsPattern extends BasePattern {
     category: "images";
     description: string;
     research: {
-        measuredNetworkReduction: string;
-        pValue: number;
+        networkImpact: string;
+        networkPValue: string;
         sampleSize: number;
         citation: string;
     };
     detect(context: AnalysisContext): Issue[];
+    private detectHTML;
+    private detectJSX;
 }
 //# sourceMappingURL=modern-formats.d.ts.map

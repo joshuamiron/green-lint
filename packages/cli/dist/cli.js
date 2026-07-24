@@ -110,7 +110,7 @@ program
             `Issues found: ${totalIssues}`,
             totalIssues > 0
                 ? `Run 'green-lint fix' to automatically fix issues`
-                : '✨ No issues found! Your code is energy-efficient.',
+                : 'No issues found! Your code is energy-efficient.',
         ];
         console.log();
         printBox(summaryLines, totalIssues > 0 ? chalk_1.default.yellow : chalk_1.default.green);
@@ -138,7 +138,7 @@ program
         const sourceCode = (0, fs_1.readFileSync)(file, 'utf-8');
         const issues = await engine.analyzeFile(file, sourceCode);
         if (issues.length > 0) {
-            const fixedCode = await engine.applyFixes(sourceCode, issues);
+            const fixedCode = await engine.applyFixes(file, sourceCode, issues);
             if (!options.dryRun) {
                 (0, fs_1.writeFileSync)(file, fixedCode, 'utf-8');
             }

@@ -9,8 +9,8 @@ export declare class ExcessiveDOMPattern extends BasePattern {
     category: "dom";
     description: string;
     research: {
-        measuredCpuImpact: string;
-        pValue: number;
+        cpuImpact: string;
+        cpuPValue: string;
         sampleSize: number;
         citation: string;
     };

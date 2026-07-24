@@ -88,7 +88,7 @@ function activate(context) {
             return;
         }
         // Apply fixes
-        const fixedCode = await engine.applyFixes(sourceCode, issues);
+        const fixedCode = await engine.applyFixes(document.fileName, sourceCode, issues);
         // Replace entire document
         const edit = new vscode.WorkspaceEdit();
         const fullRange = new vscode.Range(document.positionAt(0), document.positionAt(sourceCode.length));

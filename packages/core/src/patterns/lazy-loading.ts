@@ -6,6 +6,12 @@ import {
   getAttribute,
   getLocation,
 } from '../utils/ast-helpers';
+import {
+  parseJSX,
+  findAllJSXImages,
+  getJSXAttribute,
+  getJSXLocation,
+} from '../utils/jsx-ast-helpers';
 
 /**
  * Pattern: Defer Offscreen Images (Lazy Loading)
@@ -27,30 +33,37 @@ export class LazyLoadingPattern extends BasePattern {
   };
   
   detect(context: AnalysisContext): Issue[] {
+    if (context.language === 'jsx' || context.language === 'tsx') {
+      return this.detectJSX(context);
+    }
+    return this.detectHTML(context);
+  }
+
+  private detectHTML(context: AnalysisContext): Issue[] {
     const issues: Issue[] = [];
-    
+
     // Parse HTML into AST
     const ast = parseHTML(context.sourceCode);
-    
+
     // Find all <img> elements
     const images = findAllImages(ast);
-    
+
     // Get threshold from config (default: skip first 1 image)
     const threshold = context.config?.thresholds?.lazyLoadThreshold || 1;
-    
+
     // Check each image (skip first N based on threshold)
     images.forEach((img, index) => {
       // Skip first N images (hero/header)
       if (index < threshold) {
         return;
       }
-      
+
       const loading = getAttribute(img, 'loading');
-      
+
       // Flag if missing loading="lazy"
       if (loading !== 'lazy') {
         const location = getLocation(img);
-        
+
         if (location) {
           issues.push(
             this.createIssue(
@@ -85,13 +98,72 @@ export class LazyLoadingPattern extends BasePattern {
               }]
             )
           );
-          
+
           // Store reference for fixing
           (issues[issues.length - 1] as any)._imgElement = img;
         }
       }
     });
-    
+
+    return issues;
+  }
+
+  private detectJSX(context: AnalysisContext): Issue[] {
+    const issues: Issue[] = [];
+
+    const ast = parseJSX(context.sourceCode, context.language === 'tsx');
+    const images = findAllJSXImages(ast);
+
+    const threshold = context.config?.thresholds?.lazyLoadThreshold || 1;
+
+    images.forEach((img, index) => {
+      if (index < threshold) {
+        return;
+      }
+
+      const loading = getJSXAttribute(img.openingElement, 'loading');
+
+      if (loading !== 'lazy') {
+        const location = getJSXLocation(img.openingElement);
+
+        if (location) {
+          issues.push(
+            this.createIssue(
+              context,
+              {
+                file: context.filePath,
+                startLine: location.line,
+                startColumn: location.column,
+                endLine: location.line,
+                endColumn: location.column + 50,
+              },
+              `Add loading="lazy" to defer loading of offscreen images until needed`,
+              {
+                level: 'high',
+                metric: 'Reduces network transfer for offscreen images',
+                source: this.research.citation,
+              },
+              [{
+                id: 'add-lazy-loading',
+                description: 'Add loading="lazy" attribute',
+                isPreferred: true,
+                changes: [{
+                  file: context.filePath,
+                  range: {
+                    startLine: location.line,
+                    startColumn: location.column,
+                    endLine: location.line,
+                    endColumn: location.column,
+                  },
+                  newText: '',
+                }],
+              }]
+            )
+          );
+        }
+      }
+    });
+
     return issues;
   }
 }

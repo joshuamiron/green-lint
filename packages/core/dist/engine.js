@@ -5,6 +5,7 @@ const lazy_loading_1 = require("./patterns/lazy-loading");
 const modern_formats_1 = require("./patterns/modern-formats");
 const excessive_dom_1 = require("./patterns/excessive-dom");
 const ast_helpers_1 = require("./utils/ast-helpers");
+const jsx_ast_helpers_1 = require("./utils/jsx-ast-helpers");
 /**
  * Main analysis engine
  */
@@ -53,7 +54,10 @@ class GreenLintEngine {
      * Detect file language
      */
     detectLanguage(filePath) {
-        if (filePath.endsWith('.jsx') || filePath.endsWith('.tsx')) {
+        if (filePath.endsWith('.tsx')) {
+            return 'tsx';
+        }
+        if (filePath.endsWith('.jsx')) {
             return 'jsx';
         }
         if (filePath.endsWith('.html')) {
@@ -67,7 +71,74 @@ class GreenLintEngine {
     /**
     * Apply fixes to source code using AST
     */
-    async applyFixes(sourceCode, issues) {
+    async applyFixes(filePath, sourceCode, issues) {
+        const language = this.detectLanguage(filePath);
+        if (language === 'jsx' || language === 'tsx') {
+            return this.applyJSXFixes(sourceCode, issues, language === 'tsx');
+        }
+        return this.applyHTMLFixes(sourceCode, issues);
+    }
+    /**
+     * Compute a WebP replacement for a legacy-format image src.
+     */
+    computeWebPSrc(src) {
+        if (src.includes('unsplash.com')) {
+            return src.replace(/[&?]fm=jpg/, '&fm=webp');
+        }
+        return src.replace(/\.(jpg|jpeg|png)$/i, '.webp');
+    }
+    /**
+     * Apply fixes to JSX/TSX source via targeted text splices computed from
+     * Babel node offsets, rather than mutating and re-serializing the whole
+     * AST (which would require a JSX-aware code generator and risks
+     * reformatting code well outside the fix itself).
+     */
+    applyJSXFixes(sourceCode, issues, isTypeScript) {
+        const ast = (0, jsx_ast_helpers_1.parseJSX)(sourceCode, isTypeScript);
+        const allImages = (0, jsx_ast_helpers_1.findAllJSXImages)(ast);
+        const lazyLoadingIssues = issues.filter(i => i.patternId === 'lazy-loading');
+        const modernFormatIssues = issues.filter(i => i.patternId === 'modern-formats');
+        const findImage = (issue) => allImages.find(img => {
+            const loc = (0, jsx_ast_helpers_1.getJSXLocation)(img.openingElement);
+            return loc &&
+                loc.line === issue.location.startLine &&
+                loc.column === issue.location.startColumn;
+        });
+        // Each splice is applied at a fixed source offset. Since offsets are all
+        // computed against the original (untouched) source, applying them from
+        // the highest offset down keeps every earlier offset valid.
+        const splices = [];
+        for (const issue of lazyLoadingIssues) {
+            const img = findImage(issue);
+            if (img) {
+                splices.push({
+                    offset: (0, jsx_ast_helpers_1.jsxOpeningTagInsertionOffset)(img.openingElement),
+                    text: ' loading="lazy"',
+                });
+            }
+        }
+        for (const issue of modernFormatIssues) {
+            const img = findImage(issue);
+            if (img) {
+                const src = (0, jsx_ast_helpers_1.getJSXAttribute)(img.openingElement, 'src');
+                if (src) {
+                    const webpSrc = this.computeWebPSrc(src);
+                    splices.push({
+                        offset: img.element.start,
+                        text: `<picture><source srcSet="${webpSrc}" type="image/webp" />`,
+                    });
+                    splices.push({ offset: img.element.end, text: '</picture>' });
+                }
+            }
+        }
+        splices.sort((a, b) => b.offset - a.offset);
+        let result = sourceCode;
+        for (const splice of splices) {
+            result = result.slice(0, splice.offset) + splice.text + result.slice(splice.offset);
+        }
+        return result;
+    }
+    async applyHTMLFixes(sourceCode, issues) {
         // Parse HTML fresh
         const ast = (0, ast_helpers_1.parseHTML)(sourceCode);
         // Group issues by pattern

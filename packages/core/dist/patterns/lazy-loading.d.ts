@@ -10,12 +10,15 @@ export declare class LazyLoadingPattern extends BasePattern {
     category: "images";
     description: string;
     research: {
-        measuredNetworkReduction: string;
-        measuredCpuImpact: string;
-        pValue: number;
+        cpuImpact: string;
+        cpuPValue: string;
+        networkImpact: string;
+        networkPValue: string;
         sampleSize: number;
         citation: string;
     };
     detect(context: AnalysisContext): Issue[];
+    private detectHTML;
+    private detectJSX;
 }
 //# sourceMappingURL=lazy-loading.d.ts.map

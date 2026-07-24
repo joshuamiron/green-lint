@@ -79,7 +79,7 @@ export function activate(context: vscode.ExtensionContext) {
       }
       
       // Apply fixes
-      const fixedCode = await engine.applyFixes(sourceCode, issues);
+      const fixedCode = await engine.applyFixes(document.fileName, sourceCode, issues);
       
       // Replace entire document
       const edit = new vscode.WorkspaceEdit();

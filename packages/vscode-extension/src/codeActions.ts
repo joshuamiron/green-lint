@@ -52,7 +52,7 @@ export class GreenLintCodeActionProvider implements vscode.CodeActionProvider {
         action.edit = new vscode.WorkspaceEdit();
         
         // Apply all fixes to get the fixed code
-        const fixedCode = await this.engine.applyFixes(sourceCode, [issue]);
+        const fixedCode = await this.engine.applyFixes(document.fileName, sourceCode, [issue]);
         
         // Replace the entire document
         const fullRange = new vscode.Range(

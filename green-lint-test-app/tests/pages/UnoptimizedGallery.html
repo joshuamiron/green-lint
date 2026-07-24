@@ -1,0 +1,21 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Green Lint Test - Unoptimized</title>
+</head>
+<body>
+  <!-- HTML counterpart to UnoptimizedGallery.jsx/.tsx - scoped to just the
+       two working patterns: lazy-loading and modern-formats. -->
+  <div class="gallery">
+    <!-- Hero image, above the fold - still legacy JPEG (modern-formats issue) -->
+    <img src="https://picsum.photos/id/100/400/300.jpg" alt="Landscape 1">
+
+    <!-- Below-fold images - missing loading="lazy" AND legacy JPEG format -->
+    <img src="https://picsum.photos/id/200/400/300.jpg" alt="Landscape 2">
+    <img src="https://picsum.photos/id/300/400/300.jpg" alt="Landscape 3">
+    <img src="https://picsum.photos/id/400/400/300.jpg" alt="Landscape 4">
+  </div>
+</body>
+</html>

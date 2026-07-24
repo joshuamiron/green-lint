@@ -56,9 +56,10 @@ export interface Pattern {
     category: PatternCategory;
     description: string;
     research: {
-        measuredNetworkReduction?: string;
-        measuredCpuImpact?: string;
-        pValue?: number;
+        cpuImpact?: string;
+        cpuPValue?: string;
+        networkImpact?: string;
+        networkPValue?: string;
         sampleSize?: number;
         citation?: string;
     };

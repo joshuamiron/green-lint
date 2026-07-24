@@ -69,7 +69,7 @@ class GreenLintCodeActionProvider {
                 // Create the edit
                 action.edit = new vscode.WorkspaceEdit();
                 // Apply all fixes to get the fixed code
-                const fixedCode = await this.engine.applyFixes(sourceCode, [issue]);
+                const fixedCode = await this.engine.applyFixes(document.fileName, sourceCode, [issue]);
                 // Replace the entire document
                 const fullRange = new vscode.Range(document.positionAt(0), document.positionAt(sourceCode.length));
                 action.edit.replace(document.uri, fullRange, fixedCode);

@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Green Lint Test - Optimized</title>
+</head>
+<body>
+  <!-- Optimized counterpart to unoptimized.html. -->
+  <div class="gallery">
+    <!-- Hero image, above the fold - modern format, no lazy loading needed -->
+    <picture>
+      <source srcset="https://picsum.photos/id/100/400/300.webp" type="image/webp">
+      <img src="https://picsum.photos/id/100/400/300.jpg" alt="Landscape 1">
+    </picture>
+
+    <!-- Below-fold images - modern format + lazy loading -->
+    <picture>
+      <source srcset="https://picsum.photos/id/200/400/300.webp" type="image/webp">
+      <img src="https://picsum.photos/id/200/400/300.jpg" alt="Landscape 2" loading="lazy">
+    </picture>
+    <picture>
+      <source srcset="https://picsum.photos/id/300/400/300.webp" type="image/webp">
+      <img src="https://picsum.photos/id/300/400/300.jpg" alt="Landscape 3" loading="lazy">
+    </picture>
+    <picture>
+      <source srcset="https://picsum.photos/id/400/400/300.webp" type="image/webp">
+      <img src="https://picsum.photos/id/400/400/300.jpg" alt="Landscape 4" loading="lazy">
+    </picture>
+  </div>
+</body>
+</html>
