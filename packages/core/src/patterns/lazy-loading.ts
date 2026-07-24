@@ -1,10 +1,9 @@
 import { BasePattern } from './base-pattern';
-import { AnalysisContext, Issue, Fix } from '../types';
+import { AnalysisContext, Issue } from '../types';
 import {
   parseHTML,
   findAllImages,
   getAttribute,
-  setAttribute,
   getLocation,
 } from '../utils/ast-helpers';
 

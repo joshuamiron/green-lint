@@ -91,8 +91,8 @@ class LazyLoadingActualAudit extends Audit {
         headings: [
           { key: 'url', itemType: 'url', text: 'Image' },
           { key: 'position', itemType: 'text', text: 'Position from Top' },
-          { key: 'size', itemType: 'bytes', text: 'Size' },
-          { key: 'savings', itemType: 'text', text: 'Potential Savings' },
+          { key: 'size', itemType: 'bytes', text: 'Deferred size' },
+          // { key: 'savings', itemType: 'text', text: 'Potential Savings' },
         ],
         items: offscreenImages.map(({ img, position }) => {
           const imgDeferredKB = ((img.resourceSize || 0) / 1024).toFixed(1);

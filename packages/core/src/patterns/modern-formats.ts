@@ -1,14 +1,11 @@
 import { BasePattern } from './base-pattern';
-import { AnalysisContext, Issue, Fix } from '../types';
+import { AnalysisContext, Issue } from '../types';
 import {
   parseHTML,
   findAllImages,
   getAttribute,
   hasParentWithTag,
   getLocation,
-  createElement,
-  wrapElement,
-  insertBefore,
 } from '../utils/ast-helpers';
 
 /**
@@ -19,7 +16,9 @@ export class ModernFormatsPattern extends BasePattern {
   id = 'modern-formats';
   name = 'Serve Images in Modern Formats';
   category = 'images' as const;
-  description = 'Use modern image formats (WebP/AVIF) with fallback to JPEG/PNG';
+  description = 'Use modern image formats (WebP/AVIF) with fallback to JPEG/PNG. ' + 
+  'Modern formats are typically 25-50% smaller than JPEG ' + 
+  '(Google, Alliance for Open Media)';
 
   research = {
     networkImpact: '22.4% reduction (study conditions)',

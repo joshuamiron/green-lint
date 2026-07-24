@@ -25,7 +25,7 @@ program
     console.log(chalk.blue('🌱 Green Lint - Analyzing files...\n'));
     
     // Find files
-    const files = await glob(pattern);
+    const files = await glob(pattern, { nodir: true });
     
     if (files.length === 0) {
       console.log(chalk.yellow('No files found matching pattern:', pattern));
@@ -98,13 +98,13 @@ program
   .action(async (pattern: string, options: { dryRun?: boolean }) => {
     console.log(chalk.blue('🌱 Green Lint - Fixing issues...\n'));
     
-    const files = await glob(pattern);
-    
+    const files = await glob(pattern, { nodir: true });
+
     if (files.length === 0) {
       console.log(chalk.yellow('No files found matching pattern:', pattern));
       return;
     }
-    
+
     const engine = new GreenLintEngine();
     let totalFixed = 0;
     

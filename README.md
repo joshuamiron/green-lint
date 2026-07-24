@@ -30,15 +30,42 @@ npm run build
 
 ### Using the CLI
 
+`npm install` sets up a `green-lint` binary in this repo's `node_modules/.bin`, so after installing and building you can run it with `npx` from the repo root — no extra setup required:
+
 ```bash
-# Analyze a single file
-green-lint src/index.js
+npx green-lint analyze "src/**/*.{html,jsx,tsx}"
+```
 
-# Analyze a directory
-green-lint src/
+To use it against a project living elsewhere (e.g. your own app), point the pattern at that project's path instead of `cd`-ing into it:
 
-# With options
-green-lint src/ --severity error --fix
+```bash
+npx green-lint analyze "../my-other-project/src/**/*.{html,jsx,tsx}"
+```
+
+If you'd rather have a bare `green-lint` command available anywhere, without the `npx` prefix, link it globally once:
+
+```bash
+cd packages/cli
+npm link
+```
+
+Both commands take a glob pattern, not a bare file or directory path. **Always quote the pattern** — an unquoted `**` gets expanded by your shell before green-lint ever sees it, which can fail with a shell error like `no matches found` instead of running the tool.
+
+```bash
+# Analyze an entire directory recursively
+green-lint analyze "src/**"
+
+# Scope to specific file types for more precise results
+green-lint analyze "src/**/*.{html,jsx,tsx}"
+
+# Output results as JSON
+green-lint analyze "src/**/*.{html,jsx,tsx}" --json
+
+# Automatically fix issues
+green-lint fix "src/**/*.{html,jsx,tsx}"
+
+# Preview fixes without writing changes
+green-lint fix "src/**/*.{html,jsx,tsx}" --dry-run
 ```
 
 ### Using VS Code Extension

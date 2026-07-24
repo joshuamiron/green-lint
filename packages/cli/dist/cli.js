@@ -25,7 +25,7 @@ program
     .action(async (pattern, options) => {
     console.log(chalk_1.default.blue('🌱 Green Lint - Analyzing files...\n'));
     // Find files
-    const files = await (0, glob_1.glob)(pattern);
+    const files = await (0, glob_1.glob)(pattern, { nodir: true });
     if (files.length === 0) {
         console.log(chalk_1.default.yellow('No files found matching pattern:', pattern));
         return;
@@ -85,7 +85,7 @@ program
     .option('--dry-run', 'Show what would be fixed without making changes')
     .action(async (pattern, options) => {
     console.log(chalk_1.default.blue('🌱 Green Lint - Fixing issues...\n'));
-    const files = await (0, glob_1.glob)(pattern);
+    const files = await (0, glob_1.glob)(pattern, { nodir: true });
     if (files.length === 0) {
         console.log(chalk_1.default.yellow('No files found matching pattern:', pattern));
         return;
