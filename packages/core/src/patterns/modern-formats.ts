@@ -24,7 +24,7 @@ export class ModernFormatsPattern extends BasePattern {
     networkImpact: '22.4% reduction (study conditions)',
     networkPValue: '0.00045 (statistically significant)',
     sampleSize: 8,
-citation: 'Miron, "Developing a Framework for Retroactively Applying Green Software Enginnering Patterns to React Applications", Section 5.1, 2026',  };
+citation: 'Miron, "Developing a Framework for Retroactively Applying Green Software Engineering Patterns to React Applications", Section 5.1, 2026',  };
   
   detect(context: AnalysisContext): Issue[] {
     const issues: Issue[] = [];

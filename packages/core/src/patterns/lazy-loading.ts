@@ -23,7 +23,7 @@ export class LazyLoadingPattern extends BasePattern {
     networkImpact: '88% reduction (study conditions)',
     networkPValue: '0.008 (statistically significant)',
     sampleSize: 5,
-    citation: 'Miron, "Developing a Framework for Retroactively Applying Green Software Enginnering Patterns to React Applications", Section 5.1, 2026',
+    citation: 'Miron, "Developing a Framework for Retroactively Applying Green Software Engineering Patterns to React Applications", Section 5.1, 2026',
   };
   
   detect(context: AnalysisContext): Issue[] {

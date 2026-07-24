@@ -14,7 +14,7 @@ export class ExcessiveDOMPattern extends BasePattern {
     cpuImpact: '7.6% reduction (study conditions)',
     cpuPValue: '0.162 (not statistically significant)',
     sampleSize: 10,
-citation: 'Miron, "Developing a Framework for Retroactively Applying Green Software Enginnering Patterns to React Applications", Section 5.2, 2026',  };
+citation: 'Miron, "Developing a Framework for Retroactively Applying Green Software Engineering Patterns to React Applications", Section 5.2, 2026',  };
   
   detect(context: AnalysisContext): Issue[] {
     const issues: Issue[] = [];

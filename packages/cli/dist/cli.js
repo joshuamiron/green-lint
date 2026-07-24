@@ -10,6 +10,45 @@ const glob_1 = require("glob");
 const fs_1 = require("fs");
 const core_1 = require("@green-lint/core");
 const program = new commander_1.Command();
+const SUPPORTED_EXTENSIONS = ['.html', '.jsx', '.tsx'];
+function isSupportedFile(file) {
+    return SUPPORTED_EXTENSIONS.some(ext => file.endsWith(ext));
+}
+/**
+ * Print a box drawn to fit the given line(s), using a chalk color function.
+ */
+function printBox(lines, color = chalk_1.default.blue) {
+    const allLines = Array.isArray(lines) ? lines : [lines];
+    const width = Math.max(...allLines.map(line => line.length));
+    console.log(color(`┌${'─'.repeat(width + 2)}┐`));
+    for (const line of allLines) {
+        console.log(color(`│ ${line.padEnd(width)} │`));
+    }
+    console.log(color(`└${'─'.repeat(width + 2)}┘`));
+}
+/**
+ * The literal (non-glob) directory prefix of a pattern, e.g.
+ * "src/**\/*.html" -> "src"
+ */
+function literalBasePath(pattern) {
+    const magicIndex = pattern.search(/[*?{}[\]!]/);
+    const prefix = magicIndex === -1 ? pattern : pattern.slice(0, magicIndex);
+    const lastSlash = prefix.lastIndexOf('/');
+    return lastSlash === -1 ? '.' : prefix.slice(0, lastSlash);
+}
+/**
+ * Report why a pattern matched no files, distinguishing a missing path
+ * from a path that exists but contains no matching files.
+ */
+function reportNoFiles(pattern) {
+    const basePath = literalBasePath(pattern);
+    if (!(0, fs_1.existsSync)(basePath)) {
+        printBox(`No such file or directory: ${basePath}`, chalk_1.default.red);
+    }
+    else {
+        printBox(`No html, jsx or tsx files found at this path: ${pattern}`, chalk_1.default.yellow);
+    }
+}
 program
     .name('green-lint')
     .description('Energy-aware code analysis and auto-fixing')
@@ -23,11 +62,12 @@ program
     .argument('<pattern>', 'File pattern to analyze (e.g., "src/**/*.html")')
     .option('--json', 'Output results as JSON')
     .action(async (pattern, options) => {
-    console.log(chalk_1.default.blue('🌱 Green Lint - Analyzing files...\n'));
+    printBox('🌱 Green Lint - Analyzing files...');
+    console.log();
     // Find files
-    const files = await (0, glob_1.glob)(pattern, { nodir: true });
+    const files = (await (0, glob_1.glob)(pattern, { nodir: true })).filter(isSupportedFile);
     if (files.length === 0) {
-        console.log(chalk_1.default.yellow('No files found matching pattern:', pattern));
+        reportNoFiles(pattern);
         return;
     }
     console.log(chalk_1.default.gray(`Found ${files.length} file(s)\n`));
@@ -64,15 +104,16 @@ program
         console.log(JSON.stringify(allResults, null, 2));
     }
     else {
-        console.log(chalk_1.default.bold('\n📊 Summary:'));
-        console.log(`   Files analyzed: ${files.length}`);
-        console.log(`   Issues found: ${totalIssues}`);
-        if (totalIssues > 0) {
-            console.log(chalk_1.default.yellow(`\n   Run ${chalk_1.default.bold('green-lint fix')} to automatically fix issues`));
-        }
-        else {
-            console.log(chalk_1.default.green('\n   ✨ No issues found! Your code is energy-efficient.'));
-        }
+        const summaryLines = [
+            'Summary',
+            `Files analyzed: ${files.length}`,
+            `Issues found: ${totalIssues}`,
+            totalIssues > 0
+                ? `Run 'green-lint fix' to automatically fix issues`
+                : '✨ No issues found! Your code is energy-efficient.',
+        ];
+        console.log();
+        printBox(summaryLines, totalIssues > 0 ? chalk_1.default.yellow : chalk_1.default.green);
     }
 });
 /**
@@ -84,10 +125,11 @@ program
     .argument('<pattern>', 'File pattern to fix (e.g., "src/**/*.html")')
     .option('--dry-run', 'Show what would be fixed without making changes')
     .action(async (pattern, options) => {
-    console.log(chalk_1.default.blue('🌱 Green Lint - Fixing issues...\n'));
-    const files = await (0, glob_1.glob)(pattern, { nodir: true });
+    printBox('🌱 Green Lint - Fixing issues...');
+    console.log();
+    const files = (await (0, glob_1.glob)(pattern, { nodir: true })).filter(isSupportedFile);
     if (files.length === 0) {
-        console.log(chalk_1.default.yellow('No files found matching pattern:', pattern));
+        reportNoFiles(pattern);
         return;
     }
     const engine = new core_1.GreenLintEngine();
@@ -104,12 +146,16 @@ program
             console.log(chalk_1.default.green(`✓ Fixed ${issues.length} issue(s) in ${file}`));
         }
     }
-    console.log(chalk_1.default.bold(`\n📊 Summary:`));
-    console.log(`   Files processed: ${files.length}`);
-    console.log(`   Issues fixed: ${totalFixed}`);
+    const summaryLines = [
+        'Summary',
+        `Files processed: ${files.length}`,
+        `Issues fixed: ${totalFixed}`,
+    ];
     if (options.dryRun) {
-        console.log(chalk_1.default.yellow('\n   (Dry run - no files were modified)'));
+        summaryLines.push('(Dry run - no files were modified)');
     }
+    console.log();
+    printBox(summaryLines, options.dryRun ? chalk_1.default.yellow : chalk_1.default.green);
 });
 program.parse();
 //# sourceMappingURL=cli.js.map
