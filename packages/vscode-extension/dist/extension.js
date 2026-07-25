@@ -41,6 +41,7 @@ const diagnostics_1 = require("./diagnostics");
 const codeActions_1 = require("./codeActions");
 let diagnosticCollection;
 const engine = new core_1.GreenLintEngine();
+const SUPPORTED_LANGUAGE_IDS = ['html', 'javascriptreact', 'typescriptreact'];
 /**
  * Extension activation
  */
@@ -50,7 +51,7 @@ function activate(context) {
     diagnosticCollection = vscode.languages.createDiagnosticCollection('green-lint');
     context.subscriptions.push(diagnosticCollection);
     // Register code action provider
-    context.subscriptions.push(vscode.languages.registerCodeActionsProvider('html', new codeActions_1.GreenLintCodeActionProvider(), {
+    context.subscriptions.push(vscode.languages.registerCodeActionsProvider(SUPPORTED_LANGUAGE_IDS, new codeActions_1.GreenLintCodeActionProvider(), {
         providedCodeActionKinds: [vscode.CodeActionKind.QuickFix]
     }));
     // Analyze on file open
@@ -96,9 +97,9 @@ function activate(context) {
         await vscode.workspace.applyEdit(edit);
         vscode.window.showInformationMessage(`Green Lint: Fixed ${issues.length} issue(s)!`);
     }));
-    // Analyze all open HTML files
+    // Analyze all open supported files
     vscode.workspace.textDocuments.forEach(doc => {
-        if (doc.languageId === 'html') {
+        if (SUPPORTED_LANGUAGE_IDS.includes(doc.languageId)) {
             analyzeDocument(doc);
         }
     });
@@ -107,8 +108,8 @@ function activate(context) {
  * Analyze a document and update diagnostics
  */
 async function analyzeDocument(document) {
-    // Only analyze HTML files
-    if (document.languageId !== 'html') {
+    // Only analyze supported files
+    if (!SUPPORTED_LANGUAGE_IDS.includes(document.languageId)) {
         return;
     }
     // Check if enabled

@@ -1,4 +1,5 @@
 import type { DefaultTreeAdapterMap } from 'parse5';
+import type { DOMNode } from '../types';
 type Element = DefaultTreeAdapterMap['element'];
 type Node = DefaultTreeAdapterMap['node'];
 type Document = DefaultTreeAdapterMap['document'];
@@ -70,5 +71,27 @@ export declare function getLocation(element: Element): {
     line: number;
     column: number;
 } | null;
+/**
+ * Convert parse5 child nodes into the simplified DOMNode representation
+ * used for cross-language DOM-size analysis. Synthetic nodes (e.g. an
+ * auto-inserted <html>/<head>/<body> not actually present in the source)
+ * are flattened rather than counted; whitespace-only text nodes are
+ * dropped so formatting doesn't inflate the node count.
+ */
+export declare function parse5ToDOMNodes(nodes: ChildNode[]): DOMNode[];
+/**
+ * Build the simplified DOM tree for an entire parsed document.
+ */
+export declare function buildDOMTreeFromHTML(ast: Document): DOMNode[];
+/**
+ * Find <div> elements that serve no purpose: a single element child and
+ * no significant attributes of their own.
+ */
+export declare function findUnnecessaryDivWrappers(ast: Document): Element[];
+/**
+ * Remove a wrapper element, replacing it with its single significant
+ * child (dropping any whitespace-only text around that child).
+ */
+export declare function unwrapElement(ast: Document, wrapper: Element): void;
 export {};
 //# sourceMappingURL=ast-helpers.d.ts.map

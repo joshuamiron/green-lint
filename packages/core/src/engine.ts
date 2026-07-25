@@ -11,6 +11,8 @@ import {
   findAllImages,
   getLocation,
   setAttribute,
+  findUnnecessaryDivWrappers,
+  unwrapElement,
 } from './utils/ast-helpers';
 import {
   parseJSX,
@@ -18,6 +20,7 @@ import {
   getJSXAttribute,
   getJSXLocation,
   jsxOpeningTagInsertionOffset,
+  findUnnecessaryJSXDivWrappers,
   JSXImage,
 } from './utils/jsx-ast-helpers';
 
@@ -135,6 +138,9 @@ export class GreenLintEngine {
 
     const lazyLoadingIssues = issues.filter(i => i.patternId === 'lazy-loading');
     const modernFormatIssues = issues.filter(i => i.patternId === 'modern-formats');
+    const excessiveDomIssues = issues.filter(
+      i => i.patternId === 'excessive-dom' && i.message.startsWith('Unnecessary wrapper')
+    );
 
     const findImage = (issue: Issue): JSXImage | undefined =>
       allImages.find(img => {
@@ -144,18 +150,17 @@ export class GreenLintEngine {
           loc.column === issue.location.startColumn;
       });
 
-    // Each splice is applied at a fixed source offset. Since offsets are all
-    // computed against the original (untouched) source, applying them from
-    // the highest offset down keeps every earlier offset valid.
-    const splices: Array<{ offset: number; text: string }> = [];
+    // Each splice replaces source[start, end) with text (a point insertion
+    // has start === end). Since offsets are all computed against the
+    // original (untouched) source, applying them from the highest start
+    // down keeps every earlier offset valid.
+    const splices: Array<{ start: number; end: number; text: string }> = [];
 
     for (const issue of lazyLoadingIssues) {
       const img = findImage(issue);
       if (img) {
-        splices.push({
-          offset: jsxOpeningTagInsertionOffset(img.openingElement),
-          text: ' loading="lazy"',
-        });
+        const offset = jsxOpeningTagInsertionOffset(img.openingElement);
+        splices.push({ start: offset, end: offset, text: ' loading="lazy"' });
       }
     }
 
@@ -166,19 +171,47 @@ export class GreenLintEngine {
         if (src) {
           const webpSrc = this.computeWebPSrc(src);
           splices.push({
-            offset: img.element.start!,
+            start: img.element.start!,
+            end: img.element.start!,
             text: `<picture><source srcSet="${webpSrc}" type="image/webp" />`,
           });
-          splices.push({ offset: img.element.end!, text: '</picture>' });
+          splices.push({ start: img.element.end!, end: img.element.end!, text: '</picture>' });
         }
       }
     }
 
-    splices.sort((a, b) => b.offset - a.offset);
+    if (excessiveDomIssues.length > 0) {
+      const allWrappers = findUnnecessaryJSXDivWrappers(ast);
+
+      for (const issue of excessiveDomIssues) {
+        const wrapper = allWrappers.find(w => {
+          const loc = getJSXLocation(w.openingElement);
+          return loc &&
+            loc.line === issue.location.startLine &&
+            loc.column === issue.location.startColumn;
+        });
+
+        if (wrapper && wrapper.closingElement) {
+          // Delete the opening and closing tags, leaving the single child in place.
+          splices.push({
+            start: wrapper.openingElement.start!,
+            end: wrapper.openingElement.end!,
+            text: '',
+          });
+          splices.push({
+            start: wrapper.closingElement.start!,
+            end: wrapper.closingElement.end!,
+            text: '',
+          });
+        }
+      }
+    }
+
+    splices.sort((a, b) => b.start - a.start);
 
     let result = sourceCode;
     for (const splice of splices) {
-      result = result.slice(0, splice.offset) + splice.text + result.slice(splice.offset);
+      result = result.slice(0, splice.start) + splice.text + result.slice(splice.end);
     }
 
     return result;
@@ -264,6 +297,29 @@ export class GreenLintEngine {
       }
     }
     
+    // STEP 3: Apply excessive-dom wrapper-removal fixes
+    const excessiveDomIssues = issues.filter(
+      i => i.patternId === 'excessive-dom' && i.message.startsWith('Unnecessary wrapper')
+    );
+
+    if (excessiveDomIssues.length > 0) {
+      const allWrappers = findUnnecessaryDivWrappers(ast);
+
+      for (const issue of excessiveDomIssues) {
+        const wrapper = allWrappers.find(w => {
+          const loc = getLocation(w);
+          return loc &&
+                loc.line === issue.location.startLine &&
+                loc.column === issue.location.startColumn;
+        });
+
+        if (wrapper) {
+          console.log(`Removing unnecessary wrapper at line ${issue.location.startLine}`);
+          unwrapElement(ast, wrapper);
+        }
+      }
+    }
+
     // Serialize back to HTML
   return await serializeHTML(ast);  // ADD await
   }

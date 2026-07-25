@@ -6,6 +6,8 @@ import { GreenLintCodeActionProvider } from './codeActions';
 let diagnosticCollection: vscode.DiagnosticCollection;
 const engine = new GreenLintEngine();
 
+const SUPPORTED_LANGUAGE_IDS = ['html', 'javascriptreact', 'typescriptreact'];
+
 /**
  * Extension activation
  */
@@ -19,7 +21,7 @@ export function activate(context: vscode.ExtensionContext) {
   // Register code action provider
   context.subscriptions.push(
     vscode.languages.registerCodeActionsProvider(
-      'html',
+      SUPPORTED_LANGUAGE_IDS,
       new GreenLintCodeActionProvider(),
       {
         providedCodeActionKinds: [vscode.CodeActionKind.QuickFix]
@@ -95,9 +97,9 @@ export function activate(context: vscode.ExtensionContext) {
     })
   );
   
-  // Analyze all open HTML files
+  // Analyze all open supported files
   vscode.workspace.textDocuments.forEach(doc => {
-    if (doc.languageId === 'html') {
+    if (SUPPORTED_LANGUAGE_IDS.includes(doc.languageId)) {
       analyzeDocument(doc);
     }
   });
@@ -107,8 +109,8 @@ export function activate(context: vscode.ExtensionContext) {
  * Analyze a document and update diagnostics
  */
 async function analyzeDocument(document: vscode.TextDocument): Promise<void> {
-  // Only analyze HTML files
-  if (document.languageId !== 'html') {
+  // Only analyze supported files
+  if (!SUPPORTED_LANGUAGE_IDS.includes(document.languageId)) {
     return;
   }
   

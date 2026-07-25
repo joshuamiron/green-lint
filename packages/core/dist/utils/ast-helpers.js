@@ -47,6 +47,10 @@ exports.createElement = createElement;
 exports.wrapElement = wrapElement;
 exports.insertBefore = insertBefore;
 exports.getLocation = getLocation;
+exports.parse5ToDOMNodes = parse5ToDOMNodes;
+exports.buildDOMTreeFromHTML = buildDOMTreeFromHTML;
+exports.findUnnecessaryDivWrappers = findUnnecessaryDivWrappers;
+exports.unwrapElement = unwrapElement;
 const parse5 = __importStar(require("parse5"));
 const prettier = __importStar(require("prettier"));
 /**
@@ -218,5 +222,101 @@ function getLocation(element) {
         };
     }
     return null;
+}
+/**
+ * Convert parse5 child nodes into the simplified DOMNode representation
+ * used for cross-language DOM-size analysis. Synthetic nodes (e.g. an
+ * auto-inserted <html>/<head>/<body> not actually present in the source)
+ * are flattened rather than counted; whitespace-only text nodes are
+ * dropped so formatting doesn't inflate the node count.
+ */
+function parse5ToDOMNodes(nodes) {
+    const result = [];
+    for (const node of nodes) {
+        if (isElement(node)) {
+            if (!node.sourceCodeLocation) {
+                // Synthetic node not present in the original source - flatten.
+                if (node.childNodes) {
+                    result.push(...parse5ToDOMNodes(node.childNodes));
+                }
+                continue;
+            }
+            const attributes = {};
+            for (const attr of node.attrs) {
+                attributes[attr.name] = attr.value;
+            }
+            result.push({
+                type: 'element',
+                tag: node.tagName,
+                attributes,
+                children: node.childNodes ? parse5ToDOMNodes(node.childNodes) : [],
+                position: {
+                    line: node.sourceCodeLocation.startLine,
+                    column: node.sourceCodeLocation.startCol,
+                },
+            });
+        }
+        else if (isTextNode(node)) {
+            if (node.value.trim().length === 0 || !node.sourceCodeLocation) {
+                continue;
+            }
+            result.push({
+                type: 'text',
+                position: {
+                    line: node.sourceCodeLocation.startLine,
+                    column: node.sourceCodeLocation.startCol,
+                },
+            });
+        }
+    }
+    return result;
+}
+/**
+ * Build the simplified DOM tree for an entire parsed document.
+ */
+function buildDOMTreeFromHTML(ast) {
+    return parse5ToDOMNodes(ast.childNodes);
+}
+/**
+ * Check if an element has no significant attributes (only class/style).
+ */
+function hasNoSignificantAttributes(element) {
+    const insignificant = new Set(['class', 'style']);
+    return element.attrs.every(attr => insignificant.has(attr.name));
+}
+/**
+ * Find <div> elements that serve no purpose: a single element child and
+ * no significant attributes of their own.
+ */
+function findUnnecessaryDivWrappers(ast) {
+    const wrappers = [];
+    traverse(ast, (element) => {
+        if (element.tagName !== 'div' || !hasNoSignificantAttributes(element)) {
+            return;
+        }
+        const significantChildren = (element.childNodes || []).filter(child => !(isTextNode(child) && child.value.trim().length === 0));
+        if (significantChildren.length === 1 && isElement(significantChildren[0])) {
+            wrappers.push(element);
+        }
+    });
+    return wrappers;
+}
+/**
+ * Remove a wrapper element, replacing it with its single significant
+ * child (dropping any whitespace-only text around that child).
+ */
+function unwrapElement(ast, wrapper) {
+    traverse(ast, (node, parent) => {
+        if (node !== wrapper || !parent || !('childNodes' in parent)) {
+            return;
+        }
+        const index = parent.childNodes.indexOf(wrapper);
+        const significantChildren = (wrapper.childNodes || []).filter(child => !(isTextNode(child) && child.value.trim().length === 0));
+        if (index >= 0 && significantChildren.length === 1) {
+            const child = significantChildren[0];
+            parent.childNodes[index] = child;
+            child.parentNode = parent;
+        }
+    });
 }
 //# sourceMappingURL=ast-helpers.js.map

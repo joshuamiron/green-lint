@@ -1,6 +1,7 @@
 import * as parse5 from 'parse5';
 import * as prettier from 'prettier';
 import type { DefaultTreeAdapterMap } from 'parse5';
+import type { DOMNode } from '../types';
 
 type Element = DefaultTreeAdapterMap['element'];
 type Node = DefaultTreeAdapterMap['node'];
@@ -227,4 +228,119 @@ export function getLocation(element: Element): { line: number; column: number } 
     };
   }
   return null;
+}
+
+/**
+ * Convert parse5 child nodes into the simplified DOMNode representation
+ * used for cross-language DOM-size analysis. Synthetic nodes (e.g. an
+ * auto-inserted <html>/<head>/<body> not actually present in the source)
+ * are flattened rather than counted; whitespace-only text nodes are
+ * dropped so formatting doesn't inflate the node count.
+ */
+export function parse5ToDOMNodes(nodes: ChildNode[]): DOMNode[] {
+  const result: DOMNode[] = [];
+
+  for (const node of nodes) {
+    if (isElement(node)) {
+      if (!node.sourceCodeLocation) {
+        // Synthetic node not present in the original source - flatten.
+        if (node.childNodes) {
+          result.push(...parse5ToDOMNodes(node.childNodes));
+        }
+        continue;
+      }
+
+      const attributes: Record<string, string> = {};
+      for (const attr of node.attrs) {
+        attributes[attr.name] = attr.value;
+      }
+
+      result.push({
+        type: 'element',
+        tag: node.tagName,
+        attributes,
+        children: node.childNodes ? parse5ToDOMNodes(node.childNodes) : [],
+        position: {
+          line: node.sourceCodeLocation.startLine,
+          column: node.sourceCodeLocation.startCol,
+        },
+      });
+    } else if (isTextNode(node)) {
+      if (node.value.trim().length === 0 || !node.sourceCodeLocation) {
+        continue;
+      }
+
+      result.push({
+        type: 'text',
+        position: {
+          line: node.sourceCodeLocation.startLine,
+          column: node.sourceCodeLocation.startCol,
+        },
+      });
+    }
+  }
+
+  return result;
+}
+
+/**
+ * Build the simplified DOM tree for an entire parsed document.
+ */
+export function buildDOMTreeFromHTML(ast: Document): DOMNode[] {
+  return parse5ToDOMNodes(ast.childNodes);
+}
+
+/**
+ * Check if an element has no significant attributes (only class/style).
+ */
+function hasNoSignificantAttributes(element: Element): boolean {
+  const insignificant = new Set(['class', 'style']);
+  return element.attrs.every(attr => insignificant.has(attr.name));
+}
+
+/**
+ * Find <div> elements that serve no purpose: a single element child and
+ * no significant attributes of their own.
+ */
+export function findUnnecessaryDivWrappers(ast: Document): Element[] {
+  const wrappers: Element[] = [];
+
+  traverse(ast, (element) => {
+    if (element.tagName !== 'div' || !hasNoSignificantAttributes(element)) {
+      return;
+    }
+
+    const significantChildren = (element.childNodes || []).filter(
+      child => !(isTextNode(child) && child.value.trim().length === 0)
+    );
+
+    if (significantChildren.length === 1 && isElement(significantChildren[0])) {
+      wrappers.push(element);
+    }
+  });
+
+  return wrappers;
+}
+
+/**
+ * Remove a wrapper element, replacing it with its single significant
+ * child (dropping any whitespace-only text around that child).
+ */
+export function unwrapElement(ast: Document, wrapper: Element): void {
+  traverse(ast, (node, parent) => {
+    if (node !== wrapper || !parent || !('childNodes' in parent)) {
+      return;
+    }
+
+    const index = parent.childNodes.indexOf(wrapper as ChildNode);
+    const significantChildren = (wrapper.childNodes || []).filter(
+      child => !(isTextNode(child) && child.value.trim().length === 0)
+    );
+
+    if (index >= 0 && significantChildren.length === 1) {
+      const child = significantChildren[0];
+      parent.childNodes[index] = child;
+      (child as unknown as { parentNode: ParentNode }).parentNode = parent;
+    }
+  });
 }

@@ -15,25 +15,18 @@ export declare class ExcessiveDOMPattern extends BasePattern {
         citation: string;
     };
     detect(context: AnalysisContext): Issue[];
+    private detectHTML;
+    private detectJSX;
     /**
-     * Build simplified DOM tree
+     * Flag the file itself if its DOM tree exceeds the configured threshold.
+     * There's no automatic fix for this - reducing complexity requires
+     * human judgment - so no `fixes` are attached.
      */
-    private buildDOMTree;
+    private detectTotalNodes;
+    private createWrapperIssue;
     /**
      * Count total DOM nodes
      */
     private countNodes;
-    /**
-     * Find wrapper divs that serve no purpose
-     */
-    private findUnnecessaryWrappers;
-    /**
-     * Check if element has no significant attributes
-     */
-    private hasNoSignificantAttributes;
-    /**
-     * Generate fixes for wrapper removal
-     */
-    private generateWrapperFixes;
 }
 //# sourceMappingURL=excessive-dom.d.ts.map

@@ -1,0 +1,23 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Green Lint Test - Unoptimized DOM</title>
+</head>
+<body>
+  <!-- 3 levels of unnecessary nesting - each div has exactly one child -->
+  <div class="wrapper-outer">
+    <div class="wrapper-middle">
+      <div class="wrapper-inner">
+        <h1>Unnecessary Wrapper Nesting</h1>
+      </div>
+    </div>
+  </div>
+
+  <!-- A single unnecessary wrapper -->
+  <div class="content-wrapper">
+    <p>This paragraph is unnecessarily wrapped in a single div.</p>
+  </div>
+</body>
+</html>

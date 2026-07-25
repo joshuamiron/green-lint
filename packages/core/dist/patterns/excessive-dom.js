@@ -2,6 +2,8 @@
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.ExcessiveDOMPattern = void 0;
 const base_pattern_1 = require("./base-pattern");
+const ast_helpers_1 = require("../utils/ast-helpers");
+const jsx_ast_helpers_1 = require("../utils/jsx-ast-helpers");
 /**
  * Pattern: Avoid Excessive DOM Size
  */
@@ -20,15 +22,50 @@ class ExcessiveDOMPattern extends base_pattern_1.BasePattern {
         };
     }
     detect(context) {
+        if (context.language === 'jsx' || context.language === 'tsx') {
+            return this.detectJSX(context);
+        }
+        return this.detectHTML(context);
+    }
+    detectHTML(context) {
         const issues = [];
-        // Build DOM tree
-        const domTree = this.buildDOMTree(context);
-        // Count total nodes
+        const ast = (0, ast_helpers_1.parseHTML)(context.sourceCode);
+        const domTree = (0, ast_helpers_1.buildDOMTreeFromHTML)(ast);
+        issues.push(...this.detectTotalNodes(context, domTree));
+        for (const wrapper of (0, ast_helpers_1.findUnnecessaryDivWrappers)(ast)) {
+            const location = (0, ast_helpers_1.getLocation)(wrapper);
+            if (location) {
+                issues.push(this.createWrapperIssue(context, location));
+            }
+        }
+        return issues;
+    }
+    detectJSX(context) {
+        const issues = [];
+        const ast = (0, jsx_ast_helpers_1.parseJSX)(context.sourceCode, context.language === 'tsx');
+        const domTree = (0, jsx_ast_helpers_1.buildDOMTreeFromJSX)(ast);
+        issues.push(...this.detectTotalNodes(context, domTree));
+        for (const wrapper of (0, jsx_ast_helpers_1.findUnnecessaryJSXDivWrappers)(ast)) {
+            const location = (0, jsx_ast_helpers_1.getJSXLocation)(wrapper.openingElement);
+            if (location) {
+                issues.push(this.createWrapperIssue(context, location));
+            }
+        }
+        return issues;
+    }
+    /**
+     * Flag the file itself if its DOM tree exceeds the configured threshold.
+     * There's no automatic fix for this - reducing complexity requires
+     * human judgment - so no `fixes` are attached.
+     */
+    detectTotalNodes(context, domTree) {
         const totalNodes = this.countNodes(domTree);
         const maxNodes = context.config?.thresholds?.maxDOMNodes || 1500;
-        if (totalNodes > maxNodes) {
-            // Flag the file itself
-            issues.push(this.createIssue(context, {
+        if (totalNodes <= maxNodes) {
+            return [];
+        }
+        return [
+            this.createIssue(context, {
                 file: context.filePath,
                 startLine: 1,
                 startColumn: 0,
@@ -38,26 +75,35 @@ class ExcessiveDOMPattern extends base_pattern_1.BasePattern {
                 level: 'low',
                 metric: 'Minimal CPU impact for static content',
                 source: this.research.citation,
-            }));
-        }
-        // Find unnecessary wrappers
-        const unnecessaryWrappers = this.findUnnecessaryWrappers(domTree);
-        for (const wrapper of unnecessaryWrappers) {
-            issues.push(this.createIssue(context, wrapper.location, `Unnecessary wrapper element (contains only one child)`, {
-                level: 'low',
-                metric: 'Improves maintainability, minimal energy impact',
-                source: this.research.citation,
-            }, this.generateWrapperFixes(wrapper)));
-        }
-        return issues;
+            }),
+        ];
     }
-    /**
-     * Build simplified DOM tree
-     */
-    buildDOMTree(context) {
-        // Simplified - real version would use proper HTML/JSX parser
-        // For now, return empty array
-        return [];
+    createWrapperIssue(context, location) {
+        return this.createIssue(context, {
+            file: context.filePath,
+            startLine: location.line,
+            startColumn: location.column,
+            endLine: location.line,
+            endColumn: location.column + 4, // length of "<div"
+        }, `Unnecessary wrapper element (contains only one child)`, {
+            level: 'low',
+            metric: 'Improves maintainability, minimal energy impact',
+            source: this.research.citation,
+        }, [{
+                id: 'remove-wrapper',
+                description: 'Remove unnecessary wrapper element',
+                isPreferred: true,
+                changes: [{
+                        file: context.filePath,
+                        range: {
+                            startLine: location.line,
+                            startColumn: location.column,
+                            endLine: location.line,
+                            endColumn: location.column,
+                        },
+                        newText: '', // Not used - actual fix mutates the AST directly
+                    }],
+            }]);
     }
     /**
      * Count total DOM nodes
@@ -74,68 +120,6 @@ class ExcessiveDOMPattern extends base_pattern_1.BasePattern {
         }
         traverse(tree);
         return count;
-    }
-    /**
-     * Find wrapper divs that serve no purpose
-     */
-    findUnnecessaryWrappers(tree) {
-        const wrappers = [];
-        // Use arrow function to preserve 'this' context
-        const traverse = (nodes, filePath) => {
-            for (const node of nodes) {
-                // Check if this is a wrapper div with:
-                // 1. No attributes (or only className/style)
-                // 2. Exactly one child
-                // 3. Child is another element
-                if (node.type === 'element' &&
-                    node.tag === 'div' &&
-                    node.children?.length === 1 &&
-                    node.children[0].type === 'element' &&
-                    this.hasNoSignificantAttributes(node)) {
-                    wrappers.push({
-                        node,
-                        location: {
-                            file: filePath,
-                            startLine: node.position.line,
-                            startColumn: node.position.column,
-                            endLine: node.position.line, // Simplified
-                            endColumn: 0,
-                        },
-                    });
-                }
-                if (node.children) {
-                    traverse(node.children, filePath);
-                }
-            }
-        };
-        // traverse(tree, context.filePath);
-        return wrappers;
-    }
-    /**
-     * Check if element has no significant attributes
-     */
-    hasNoSignificantAttributes(node) {
-        if (!node.attributes)
-            return true;
-        const insignificantAttrs = new Set(['className', 'class', 'style']);
-        const attrs = Object.keys(node.attributes);
-        return attrs.every(attr => insignificantAttrs.has(attr));
-    }
-    /**
-     * Generate fixes for wrapper removal
-     */
-    generateWrapperFixes(wrapper) {
-        return [
-            {
-                id: 'remove-wrapper',
-                description: 'Remove unnecessary wrapper element',
-                isPreferred: true,
-                changes: [
-                // Would generate code to unwrap the element
-                // Simplified for now
-                ],
-            },
-        ];
     }
 }
 exports.ExcessiveDOMPattern = ExcessiveDOMPattern;

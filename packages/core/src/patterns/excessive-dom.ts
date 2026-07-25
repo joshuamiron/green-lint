@@ -1,5 +1,17 @@
 import { BasePattern } from './base-pattern';
-import { AnalysisContext, Issue, Fix, DOMNode } from '../types';
+import { AnalysisContext, Issue, DOMNode } from '../types';
+import {
+  parseHTML,
+  getLocation,
+  buildDOMTreeFromHTML,
+  findUnnecessaryDivWrappers,
+} from '../utils/ast-helpers';
+import {
+  parseJSX,
+  getJSXLocation,
+  buildDOMTreeFromJSX,
+  findUnnecessaryJSXDivWrappers,
+} from '../utils/jsx-ast-helpers';
 
 /**
  * Pattern: Avoid Excessive DOM Size
@@ -9,82 +21,133 @@ export class ExcessiveDOMPattern extends BasePattern {
   name = 'Avoid Excessive DOM Size';
   category = 'dom' as const;
   description = 'Reduce DOM complexity by removing unnecessary wrapper elements';
-  
+
   research = {
     cpuImpact: '7.6% reduction (study conditions)',
     cpuPValue: '0.162 (not statistically significant)',
     sampleSize: 10,
-citation: 'Miron, "Developing a Framework for Retroactively Applying Green Software Engineering Patterns to React Applications", Section 5.2, 2026',  };
-  
+    citation: 'Miron, "Developing a Framework for Retroactively Applying Green Software Engineering Patterns to React Applications", Section 5.2, 2026',
+  };
+
   detect(context: AnalysisContext): Issue[] {
+    if (context.language === 'jsx' || context.language === 'tsx') {
+      return this.detectJSX(context);
+    }
+    return this.detectHTML(context);
+  }
+
+  private detectHTML(context: AnalysisContext): Issue[] {
     const issues: Issue[] = [];
-    
-    // Build DOM tree
-    const domTree = this.buildDOMTree(context);
-    
-    // Count total nodes
-    const totalNodes = this.countNodes(domTree);
-    const maxNodes = context.config?.thresholds?.maxDOMNodes || 1500;
-    
-    if (totalNodes > maxNodes) {
-      // Flag the file itself
-      issues.push(
-        this.createIssue(
-          context,
-          {
-            file: context.filePath,
-            startLine: 1,
-            startColumn: 0,
-            endLine: 1,
-            endColumn: 0,
-          },
-          `DOM has ${totalNodes} nodes (recommended: <${maxNodes})`,
-          {
-            level: 'low',
-            metric: 'Minimal CPU impact for static content',
-            source: this.research.citation,
-          }
-        )
-      );
+
+    const ast = parseHTML(context.sourceCode);
+    const domTree = buildDOMTreeFromHTML(ast);
+
+    issues.push(...this.detectTotalNodes(context, domTree));
+
+    for (const wrapper of findUnnecessaryDivWrappers(ast)) {
+      const location = getLocation(wrapper);
+      if (location) {
+        issues.push(this.createWrapperIssue(context, location));
+      }
     }
-    
-    // Find unnecessary wrappers
-    const unnecessaryWrappers = this.findUnnecessaryWrappers(domTree);
-    
-    for (const wrapper of unnecessaryWrappers) {
-      issues.push(
-        this.createIssue(
-          context,
-          wrapper.location,
-          `Unnecessary wrapper element (contains only one child)`,
-          {
-            level: 'low',
-            metric: 'Improves maintainability, minimal energy impact',
-            source: this.research.citation,
-          },
-          this.generateWrapperFixes(wrapper)
-        )
-      );
-    }
-    
+
     return issues;
   }
-  
-  /**
-   * Build simplified DOM tree
-   */
-  private buildDOMTree(context: AnalysisContext): DOMNode[] {
-    // Simplified - real version would use proper HTML/JSX parser
-    // For now, return empty array
-    return [];
+
+  private detectJSX(context: AnalysisContext): Issue[] {
+    const issues: Issue[] = [];
+
+    const ast = parseJSX(context.sourceCode, context.language === 'tsx');
+    const domTree = buildDOMTreeFromJSX(ast);
+
+    issues.push(...this.detectTotalNodes(context, domTree));
+
+    for (const wrapper of findUnnecessaryJSXDivWrappers(ast)) {
+      const location = getJSXLocation(wrapper.openingElement);
+      if (location) {
+        issues.push(this.createWrapperIssue(context, location));
+      }
+    }
+
+    return issues;
   }
-  
+
+  /**
+   * Flag the file itself if its DOM tree exceeds the configured threshold.
+   * There's no automatic fix for this - reducing complexity requires
+   * human judgment - so no `fixes` are attached.
+   */
+  private detectTotalNodes(context: AnalysisContext, domTree: DOMNode[]): Issue[] {
+    const totalNodes = this.countNodes(domTree);
+    const maxNodes = context.config?.thresholds?.maxDOMNodes || 1500;
+
+    if (totalNodes <= maxNodes) {
+      return [];
+    }
+
+    return [
+      this.createIssue(
+        context,
+        {
+          file: context.filePath,
+          startLine: 1,
+          startColumn: 0,
+          endLine: 1,
+          endColumn: 0,
+        },
+        `DOM has ${totalNodes} nodes (recommended: <${maxNodes})`,
+        {
+          level: 'low',
+          metric: 'Minimal CPU impact for static content',
+          source: this.research.citation,
+        }
+      ),
+    ];
+  }
+
+  private createWrapperIssue(
+    context: AnalysisContext,
+    location: { line: number; column: number }
+  ): Issue {
+    return this.createIssue(
+      context,
+      {
+        file: context.filePath,
+        startLine: location.line,
+        startColumn: location.column,
+        endLine: location.line,
+        endColumn: location.column + 4, // length of "<div"
+      },
+      `Unnecessary wrapper element (contains only one child)`,
+      {
+        level: 'low',
+        metric: 'Improves maintainability, minimal energy impact',
+        source: this.research.citation,
+      },
+      [{
+        id: 'remove-wrapper',
+        description: 'Remove unnecessary wrapper element',
+        isPreferred: true,
+        changes: [{
+          file: context.filePath,
+          range: {
+            startLine: location.line,
+            startColumn: location.column,
+            endLine: location.line,
+            endColumn: location.column,
+          },
+          newText: '', // Not used - actual fix mutates the AST directly
+        }],
+      }]
+    );
+  }
+
   /**
    * Count total DOM nodes
    */
   private countNodes(tree: DOMNode[]): number {
     let count = 0;
-    
+
     function traverse(nodes: DOMNode[]) {
       for (const node of nodes) {
         count++;
@@ -93,82 +156,8 @@ citation: 'Miron, "Developing a Framework for Retroactively Applying Green Softw
         }
       }
     }
-    
+
     traverse(tree);
     return count;
-  }
-  
-  /**
-   * Find wrapper divs that serve no purpose
-   */
-  private findUnnecessaryWrappers(tree: DOMNode[]): Array<{
-    node: DOMNode;
-    location: Issue['location'];
-  }> {
-    const wrappers: Array<{ node: DOMNode; location: Issue['location'] }> = [];
-    
-    // Use arrow function to preserve 'this' context
-    const traverse = (nodes: DOMNode[], filePath: string) => {
-      for (const node of nodes) {
-        // Check if this is a wrapper div with:
-        // 1. No attributes (or only className/style)
-        // 2. Exactly one child
-        // 3. Child is another element
-        if (
-          node.type === 'element' &&
-          node.tag === 'div' &&
-          node.children?.length === 1 &&
-          node.children[0].type === 'element' &&
-          this.hasNoSignificantAttributes(node)
-        ) {
-          wrappers.push({
-            node,
-            location: {
-              file: filePath,
-              startLine: node.position.line,
-              startColumn: node.position.column,
-              endLine: node.position.line,  // Simplified
-              endColumn: 0,
-            },
-          });
-        }
-        
-        if (node.children) {
-          traverse(node.children, filePath);
-        }
-      }
-    };
-    
-    // traverse(tree, context.filePath);
-    return wrappers;
-  }
-  
-  /**
-   * Check if element has no significant attributes
-   */
-  private hasNoSignificantAttributes(node: DOMNode): boolean {
-    if (!node.attributes) return true;
-    
-    const insignificantAttrs = new Set(['className', 'class', 'style']);
-    const attrs = Object.keys(node.attributes);
-    
-    return attrs.every(attr => insignificantAttrs.has(attr));
-  }
-  
-  /**
-   * Generate fixes for wrapper removal
-   */
-  private generateWrapperFixes(wrapper: any): Fix[] {
-    return [
-      {
-        id: 'remove-wrapper',
-        description: 'Remove unnecessary wrapper element',
-        isPreferred: true,
-        changes: [
-          // Would generate code to unwrap the element
-          // Simplified for now
-        ],
-      },
-    ];
   }
 }
