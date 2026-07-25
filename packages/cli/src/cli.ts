@@ -62,6 +62,7 @@ program
  */
 program
   .command('analyze')
+  .alias('analyse')
   .description('Analyze files for green software issues')
   .argument('<pattern>', 'File pattern to analyze (e.g., "src/**/*.html")')
   .option('--json', 'Output results as JSON')
