@@ -51,7 +51,7 @@ function updateDiagnostics(document, collection, issues) {
         diagnostic.source = 'Green Lint';
         // Add energy impact info
         diagnostic.relatedInformation = [
-            new vscode.DiagnosticRelatedInformation(new vscode.Location(document.uri, range), `Energy Impact: ${issue.energyImpact.metric}`)
+            new vscode.DiagnosticRelatedInformation(new vscode.Location(document.uri, range), `🌱 Energy Impact: ${issue.energyImpact.metric}`)
         ];
         return diagnostic;
     });

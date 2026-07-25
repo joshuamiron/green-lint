@@ -56,7 +56,7 @@ export function activate(context: vscode.ExtensionContext) {
       const editor = vscode.window.activeTextEditor;
       if (editor) {
         await analyzeDocument(editor.document);
-        vscode.window.showInformationMessage('Green Lint: Analysis complete!');
+        vscode.window.showInformationMessage('🌱 Green Lint: Analysis complete!');
       }
     })
   );
@@ -76,7 +76,7 @@ export function activate(context: vscode.ExtensionContext) {
       const issues = await engine.analyzeFile(document.fileName, sourceCode);
       
       if (issues.length === 0) {
-        vscode.window.showInformationMessage('Green Lint: No issues to fix!');
+        vscode.window.showInformationMessage('🌱 Green Lint: No issues to fix!');
         return;
       }
       
@@ -93,7 +93,7 @@ export function activate(context: vscode.ExtensionContext) {
       
       await vscode.workspace.applyEdit(edit);
       
-      vscode.window.showInformationMessage(`Green Lint: Fixed ${issues.length} issue(s)!`);
+      vscode.window.showInformationMessage(`🌱 Green Lint: Fixed ${issues.length} issue(s)!`);
     })
   );
   

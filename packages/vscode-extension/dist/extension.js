@@ -71,7 +71,7 @@ function activate(context) {
         const editor = vscode.window.activeTextEditor;
         if (editor) {
             await analyzeDocument(editor.document);
-            vscode.window.showInformationMessage('Green Lint: Analysis complete!');
+            vscode.window.showInformationMessage('🌱 Green Lint: Analysis complete!');
         }
     }));
     // Command: Fix all issues
@@ -85,7 +85,7 @@ function activate(context) {
         // Analyze
         const issues = await engine.analyzeFile(document.fileName, sourceCode);
         if (issues.length === 0) {
-            vscode.window.showInformationMessage('Green Lint: No issues to fix!');
+            vscode.window.showInformationMessage('🌱 Green Lint: No issues to fix!');
             return;
         }
         // Apply fixes
@@ -95,7 +95,7 @@ function activate(context) {
         const fullRange = new vscode.Range(document.positionAt(0), document.positionAt(sourceCode.length));
         edit.replace(document.uri, fullRange, fixedCode);
         await vscode.workspace.applyEdit(edit);
-        vscode.window.showInformationMessage(`Green Lint: Fixed ${issues.length} issue(s)!`);
+        vscode.window.showInformationMessage(`🌱 Green Lint: Fixed ${issues.length} issue(s)!`);
     }));
     // Analyze all open supported files
     vscode.workspace.textDocuments.forEach(doc => {

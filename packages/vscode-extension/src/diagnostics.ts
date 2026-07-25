@@ -37,7 +37,7 @@ export function updateDiagnostics(
     diagnostic.relatedInformation = [
       new vscode.DiagnosticRelatedInformation(
         new vscode.Location(document.uri, range),
-        `Energy Impact: ${issue.energyImpact.metric}`
+        `🌱 Energy Impact: ${issue.energyImpact.metric}`
       )
     ];
     
