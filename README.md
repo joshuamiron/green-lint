@@ -74,7 +74,7 @@ The VS Code extension provides real-time analysis with editor integration:
 
 1. Open the `green-lint` folder in VS Code
 2. Press `F5` to launch an Extension Development Host
-3. Open any HTML, JSX, or CSS file
+3. Open any HTML, JSX, or TSX file
 4. Issues appear with clickable fixes
 
 ### Lighthouse Integration
@@ -92,28 +92,28 @@ lighthouse https://example.com --plugins=lighthouse-plugin-green-lint
 
 ## Patterns & Research
 
-Green Lint detects the following energy-inefficient patterns:
+Green Lint detects the following energy-inefficient patterns. All three work across HTML, JSX, and TSX source.
 
 ### Lazy Loading Images
 
 **Measured**: Reduced network transfer for offscreen images
 
 - Detects images missing `loading="lazy"` attribute
-- Recommends lazy loading for offscreen images
+- Automatically adds the `loading="lazy"` attribute
 
 ### Excessive DOM Size
 
-**Measured**: No statistically significant energy impact (informational only)
+**Measured**: No statistically significant energy impact
 
-- Identifies DOM trees exceeding optimal size thresholds
-- Suggests simplification and component optimization
+- Identifies DOM trees exceeding optimal size thresholds (informational only, no auto-fix)
+- Automatically removes unnecessary single-child wrapper elements
 
 ### Modern Format Usage
 
 **Measured**: Reduced network transfer serving WebP instead of JPEG
 
 - Detects images not using modern formats (WebP, AVIF)
-- Recommends format conversion with responsive sizing
+- Automatically wraps images in a `<picture>` element with a WebP `<source>`
 
 ## Project Structure
 
@@ -150,13 +150,7 @@ npm run dev
 
 ### Running Tests
 
-```bash
-# Run all tests
-npm test
-
-# Run tests in watch mode
-npm test -- --watch
-```
+No automated test suite exists yet — `npm test` currently fails (no test files in `packages/core`, and no `test` script in the other packages). `packages/core` has `vitest` wired up and ready for specs once they're written.
 
 ### Building
 
@@ -170,27 +164,29 @@ npm run clean
 
 ## Configuration
 
-Create a `.green-lintrc.json` in your project root to customize Green Lint:
+Green Lint's engine accepts a config object matching the `UserConfig` type from `@green-lint/core`. **The CLI doesn't currently load a config file automatically** — this is only usable when calling the API directly (see [API Usage](#api-usage)).
 
-```json
-{
-  "patterns": {
-    "lazy-loading": { "enabled": true },
-    "excessive-dom": { "enabled": true, "maxNodes": 2000 },
-    "modern-formats": { "enabled": true }
+```typescript
+const config = {
+  patterns: {
+    'lazy-loading': { enabled: true },
+    'modern-formats': { enabled: true },
+    'excessive-dom': { enabled: true },
   },
-  "severity": "warning",
-  "ignore": ["node_modules/**", ".next/**"]
-}
+  thresholds: {
+    maxDOMNodes: 2000,      // default: 1500
+    lazyLoadThreshold: 1,   // default: 1 (leading images to skip)
+  },
+};
+
+const issues = await engine.analyzeFile('path/to/file.html', sourceCode, config);
 ```
 
 ### Configuration Options
 
-- **patterns** - Enable/disable specific patterns
-- **severity** - Minimum severity level to report (`info`, `warning`, `error`)
-- **ignore** - File patterns to exclude from analysis
-- **fix** - Automatically apply fixes where possible
-- **output** - Output format (`json`, `text`, `html`)
+- **patterns** - Enable/disable specific patterns by ID
+- **thresholds.maxDOMNodes** - Max DOM nodes before flagging excessive size (default: 1500)
+- **thresholds.lazyLoadThreshold** - Number of leading images to skip before flagging missing `loading="lazy"` (default: 1)
 
 ## API Usage
 
@@ -201,7 +197,7 @@ import { GreenLintEngine } from '@green-lint/core';
 
 const engine = new GreenLintEngine();
 const issues = await engine.analyzeFile(
-  'path/to/file.js',
+  'path/to/file.html',
   sourceCode,
   { /* config */ }
 );
@@ -220,11 +216,10 @@ for (const issue of issues) {
 
 ## Examples
 
-See the [green-lint-test-app](./green-lint-test-app/) directory for complete examples including:
+See [green-lint-test-app/tests/pages](./green-lint-test-app/tests/pages/) for complete examples, each provided as matching HTML, JSX, and TSX fixtures:
 
-- Bloated vs. clean DOM structures
-- Optimized vs. unoptimized galleries
-- Image lazy loading implementation
+- `UnoptimizedGallery` / `OptimizedGallery` - lazy loading and modern image formats
+- `UnoptimizedDOM` / `OptimizedDOM` - unnecessary wrapper elements
 
 ## License
 
