@@ -110,7 +110,7 @@ program
             console.log(chalk.gray(`     Energy Impact: ${issue.energyImpact.level} - ${issue.energyImpact.metric}`));
             
             if (issue.fixes.length > 0) {
-              console.log(chalk.green(`     💡 ${issue.fixes.length} fix(es) available`));
+              console.log(chalk.green(`     💡 ${issue.fixes.length} fix available`));
             }
             
             console.log();
@@ -192,7 +192,7 @@ program
       'Summary',
       `Files processed: ${files.length}`,
       `Issues fixed: ${totalFixed}`,
-      `Informational (not fixable): ${totalInformational}`,
+      `Informational: ${totalInformational}`,
     ];
     if (options.dryRun) {
       summaryLines.push('(Dry run - no files were modified)');
