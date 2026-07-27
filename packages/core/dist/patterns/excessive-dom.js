@@ -78,6 +78,12 @@ class ExcessiveDOMPattern extends base_pattern_1.BasePattern {
             }),
         ];
     }
+    /**
+     * Informational only - deliberately no auto-fix. A div that looks like a
+     * redundant single-child wrapper from markup alone may still be doing
+     * real work (a CSS Grid/Flexbox container, a styling/JS hook) that isn't
+     * visible without also checking the stylesheet and script.
+     */
     createWrapperIssue(context, location) {
         return this.createIssue(context, {
             file: context.filePath,
@@ -89,21 +95,7 @@ class ExcessiveDOMPattern extends base_pattern_1.BasePattern {
             level: 'low',
             metric: 'Improves maintainability, minimal energy impact',
             source: this.research.citation,
-        }, [{
-                id: 'remove-wrapper',
-                description: 'Remove unnecessary wrapper element',
-                isPreferred: true,
-                changes: [{
-                        file: context.filePath,
-                        range: {
-                            startLine: location.line,
-                            startColumn: location.column,
-                            endLine: location.line,
-                            endColumn: location.column,
-                        },
-                        newText: '', // Not used - actual fix mutates the AST directly
-                    }],
-            }]);
+        });
     }
     /**
      * Count total DOM nodes

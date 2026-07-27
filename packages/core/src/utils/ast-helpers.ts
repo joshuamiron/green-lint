@@ -321,26 +321,3 @@ export function findUnnecessaryDivWrappers(ast: Document): Element[] {
 
   return wrappers;
 }
-
-/**
- * Remove a wrapper element, replacing it with its single significant
- * child (dropping any whitespace-only text around that child).
- */
-export function unwrapElement(ast: Document, wrapper: Element): void {
-  traverse(ast, (node, parent) => {
-    if (node !== wrapper || !parent || !('childNodes' in parent)) {
-      return;
-    }
-
-    const index = parent.childNodes.indexOf(wrapper as ChildNode);
-    const significantChildren = (wrapper.childNodes || []).filter(
-      child => !(isTextNode(child) && child.value.trim().length === 0)
-    );
-
-    if (index >= 0 && significantChildren.length === 1) {
-      const child = significantChildren[0];
-      parent.childNodes[index] = child;
-      (child as unknown as { parentNode: ParentNode }).parentNode = parent;
-    }
-  });
-}

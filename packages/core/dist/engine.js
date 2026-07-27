@@ -98,7 +98,6 @@ class GreenLintEngine {
         const allImages = (0, jsx_ast_helpers_1.findAllJSXImages)(ast);
         const lazyLoadingIssues = issues.filter(i => i.patternId === 'lazy-loading');
         const modernFormatIssues = issues.filter(i => i.patternId === 'modern-formats');
-        const excessiveDomIssues = issues.filter(i => i.patternId === 'excessive-dom' && i.message.startsWith('Unnecessary wrapper'));
         const findImage = (issue) => allImages.find(img => {
             const loc = (0, jsx_ast_helpers_1.getJSXLocation)(img.openingElement);
             return loc &&
@@ -129,30 +128,6 @@ class GreenLintEngine {
                         text: `<picture><source srcSet="${webpSrc}" type="image/webp" />`,
                     });
                     splices.push({ start: img.element.end, end: img.element.end, text: '</picture>' });
-                }
-            }
-        }
-        if (excessiveDomIssues.length > 0) {
-            const allWrappers = (0, jsx_ast_helpers_1.findUnnecessaryJSXDivWrappers)(ast);
-            for (const issue of excessiveDomIssues) {
-                const wrapper = allWrappers.find(w => {
-                    const loc = (0, jsx_ast_helpers_1.getJSXLocation)(w.openingElement);
-                    return loc &&
-                        loc.line === issue.location.startLine &&
-                        loc.column === issue.location.startColumn;
-                });
-                if (wrapper && wrapper.closingElement) {
-                    // Delete the opening and closing tags, leaving the single child in place.
-                    splices.push({
-                        start: wrapper.openingElement.start,
-                        end: wrapper.openingElement.end,
-                        text: '',
-                    });
-                    splices.push({
-                        start: wrapper.closingElement.start,
-                        end: wrapper.closingElement.end,
-                        text: '',
-                    });
                 }
             }
         }
@@ -227,23 +202,6 @@ class GreenLintEngine {
             }
             else {
                 console.log(`Could not find image at line ${issue.location.startLine}`);
-            }
-        }
-        // STEP 3: Apply excessive-dom wrapper-removal fixes
-        const excessiveDomIssues = issues.filter(i => i.patternId === 'excessive-dom' && i.message.startsWith('Unnecessary wrapper'));
-        if (excessiveDomIssues.length > 0) {
-            const allWrappers = (0, ast_helpers_1.findUnnecessaryDivWrappers)(ast);
-            for (const issue of excessiveDomIssues) {
-                const wrapper = allWrappers.find(w => {
-                    const loc = (0, ast_helpers_1.getLocation)(w);
-                    return loc &&
-                        loc.line === issue.location.startLine &&
-                        loc.column === issue.location.startColumn;
-                });
-                if (wrapper) {
-                    console.log(`Removing unnecessary wrapper at line ${issue.location.startLine}`);
-                    (0, ast_helpers_1.unwrapElement)(ast, wrapper);
-                }
             }
         }
         // Serialize back to HTML

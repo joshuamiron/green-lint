@@ -88,10 +88,5 @@ export declare function buildDOMTreeFromHTML(ast: Document): DOMNode[];
  * no significant attributes of their own.
  */
 export declare function findUnnecessaryDivWrappers(ast: Document): Element[];
-/**
- * Remove a wrapper element, replacing it with its single significant
- * child (dropping any whitespace-only text around that child).
- */
-export declare function unwrapElement(ast: Document, wrapper: Element): void;
 export {};
 //# sourceMappingURL=ast-helpers.d.ts.map

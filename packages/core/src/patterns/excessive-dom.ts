@@ -105,6 +105,12 @@ export class ExcessiveDOMPattern extends BasePattern {
     ];
   }
 
+  /**
+   * Informational only - deliberately no auto-fix. A div that looks like a
+   * redundant single-child wrapper from markup alone may still be doing
+   * real work (a CSS Grid/Flexbox container, a styling/JS hook) that isn't
+   * visible without also checking the stylesheet and script.
+   */
   private createWrapperIssue(
     context: AnalysisContext,
     location: { line: number; column: number }
@@ -118,27 +124,12 @@ export class ExcessiveDOMPattern extends BasePattern {
         endLine: location.line,
         endColumn: location.column + 4, // length of "<div"
       },
-      `Unnecessary wrapper element (contains only one child)`,
+      `Wrapper element contains only one child and may be removable. It is not removed automatically, as it could carry styling or scripting the linter cannot detect.`,
       {
         level: 'low',
         metric: 'Improves maintainability, minimal energy impact',
         source: this.research.citation,
-      },
-      [{
-        id: 'remove-wrapper',
-        description: 'Remove unnecessary wrapper element',
-        isPreferred: true,
-        changes: [{
-          file: context.filePath,
-          range: {
-            startLine: location.line,
-            startColumn: location.column,
-            endLine: location.line,
-            endColumn: location.column,
-          },
-          newText: '', // Not used - actual fix mutates the AST directly
-        }],
-      }]
+      }
     );
   }
 

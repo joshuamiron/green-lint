@@ -75,11 +75,13 @@ program
     // Analyze each file
     const engine = new core_1.GreenLintEngine();
     let totalIssues = 0;
+    let totalInformational = 0;
     const allResults = [];
     for (const file of files) {
         const sourceCode = (0, fs_1.readFileSync)(file, 'utf-8');
         const issues = await engine.analyzeFile(file, sourceCode);
-        totalIssues += issues.length;
+        totalIssues += issues.filter(i => i.fixes.length > 0).length;
+        totalInformational += issues.filter(i => i.fixes.length === 0).length;
         if (issues.length > 0) {
             allResults.push({ file, issues });
             if (!options.json) {
@@ -105,16 +107,25 @@ program
         console.log(JSON.stringify(allResults, null, 2));
     }
     else {
+        let finalLine;
+        if (totalIssues === 0 && totalInformational === 0) {
+            finalLine = 'No issues found! Your code is energy-efficient.';
+        }
+        else if (totalIssues > 0) {
+            finalLine = `Run 'green-lint fix' to automatically fix issues`;
+        }
+        else {
+            finalLine = 'No fixable issues found (see informational notes above)';
+        }
         const summaryLines = [
             'Summary',
             `Files analyzed: ${files.length}`,
             `Issues found: ${totalIssues}`,
-            totalIssues > 0
-                ? `Run 'green-lint fix' to automatically fix issues`
-                : 'No issues found! Your code is energy-efficient.',
+            `Informational: ${totalInformational}`,
+            finalLine,
         ];
         console.log();
-        printBox(summaryLines, totalIssues > 0 ? chalk_1.default.yellow : chalk_1.default.green);
+        printBox(summaryLines, totalIssues > 0 || totalInformational > 0 ? chalk_1.default.yellow : chalk_1.default.green);
     }
 });
 /**
@@ -135,22 +146,26 @@ program
     }
     const engine = new core_1.GreenLintEngine();
     let totalFixed = 0;
+    let totalInformational = 0;
     for (const file of files) {
         const sourceCode = (0, fs_1.readFileSync)(file, 'utf-8');
         const issues = await engine.analyzeFile(file, sourceCode);
-        if (issues.length > 0) {
-            const fixedCode = await engine.applyFixes(file, sourceCode, issues);
+        const fixableIssues = issues.filter(i => i.fixes.length > 0);
+        totalInformational += issues.filter(i => i.fixes.length === 0).length;
+        if (fixableIssues.length > 0) {
+            const fixedCode = await engine.applyFixes(file, sourceCode, fixableIssues);
             if (!options.dryRun) {
                 (0, fs_1.writeFileSync)(file, fixedCode, 'utf-8');
             }
-            totalFixed += issues.length;
-            console.log(chalk_1.default.green(`✓ Fixed ${issues.length} issue(s) in ${file}`));
+            totalFixed += fixableIssues.length;
+            console.log(chalk_1.default.green(`✓ Fixed ${fixableIssues.length} issue(s) in ${file}`));
         }
     }
     const summaryLines = [
         'Summary',
         `Files processed: ${files.length}`,
         `Issues fixed: ${totalFixed}`,
+        `Informational (not fixable): ${totalInformational}`,
     ];
     if (options.dryRun) {
         summaryLines.push('(Dry run - no files were modified)');

@@ -23,6 +23,12 @@ export declare class ExcessiveDOMPattern extends BasePattern {
      * human judgment - so no `fixes` are attached.
      */
     private detectTotalNodes;
+    /**
+     * Informational only - deliberately no auto-fix. A div that looks like a
+     * redundant single-child wrapper from markup alone may still be doing
+     * real work (a CSS Grid/Flexbox container, a styling/JS hook) that isn't
+     * visible without also checking the stylesheet and script.
+     */
     private createWrapperIssue;
     /**
      * Count total DOM nodes

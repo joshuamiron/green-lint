@@ -50,7 +50,6 @@ exports.getLocation = getLocation;
 exports.parse5ToDOMNodes = parse5ToDOMNodes;
 exports.buildDOMTreeFromHTML = buildDOMTreeFromHTML;
 exports.findUnnecessaryDivWrappers = findUnnecessaryDivWrappers;
-exports.unwrapElement = unwrapElement;
 const parse5 = __importStar(require("parse5"));
 const prettier = __importStar(require("prettier"));
 /**
@@ -300,23 +299,5 @@ function findUnnecessaryDivWrappers(ast) {
         }
     });
     return wrappers;
-}
-/**
- * Remove a wrapper element, replacing it with its single significant
- * child (dropping any whitespace-only text around that child).
- */
-function unwrapElement(ast, wrapper) {
-    traverse(ast, (node, parent) => {
-        if (node !== wrapper || !parent || !('childNodes' in parent)) {
-            return;
-        }
-        const index = parent.childNodes.indexOf(wrapper);
-        const significantChildren = (wrapper.childNodes || []).filter(child => !(isTextNode(child) && child.value.trim().length === 0));
-        if (index >= 0 && significantChildren.length === 1) {
-            const child = significantChildren[0];
-            parent.childNodes[index] = child;
-            child.parentNode = parent;
-        }
-    });
 }
 //# sourceMappingURL=ast-helpers.js.map
