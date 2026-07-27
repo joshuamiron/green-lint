@@ -91,7 +91,7 @@ class ExcessiveDOMPattern extends base_pattern_1.BasePattern {
             startColumn: location.column,
             endLine: location.line,
             endColumn: location.column + 4, // length of "<div"
-        }, `Unnecessary wrapper element (contains only one child)`, {
+        }, `Wrapper element contains only one child and may be removable. It is not removed automatically, as it could carry styling or scripting the linter cannot detect.`, {
             level: 'low',
             metric: 'Improves maintainability, minimal energy impact',
             source: this.research.citation,

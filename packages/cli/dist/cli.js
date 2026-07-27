@@ -95,7 +95,7 @@ program
                     console.log(chalk_1.default.gray(`     Line ${issue.location.startLine}:${issue.location.startColumn}`));
                     console.log(chalk_1.default.gray(`     Energy Impact: ${issue.energyImpact.level} - ${issue.energyImpact.metric}`));
                     if (issue.fixes.length > 0) {
-                        console.log(chalk_1.default.green(`     💡 ${issue.fixes.length} fix(es) available`));
+                        console.log(chalk_1.default.green(`     💡 ${issue.fixes.length} fix available`));
                     }
                     console.log();
                 }
@@ -165,7 +165,7 @@ program
         'Summary',
         `Files processed: ${files.length}`,
         `Issues fixed: ${totalFixed}`,
-        `Informational (not fixable): ${totalInformational}`,
+        `Informational: ${totalInformational}`,
     ];
     if (options.dryRun) {
         summaryLines.push('(Dry run - no files were modified)');
