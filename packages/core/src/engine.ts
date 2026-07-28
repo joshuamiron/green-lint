@@ -22,6 +22,16 @@ import {
 } from './utils/jsx-ast-helpers';
 
 /**
+ * A targeted source-offset edit: replace source[start, end) with text (a
+ * point insertion has start === end).
+ */
+export interface Edit {
+  start: number;
+  end: number;
+  text: string;
+}
+
+/**
  * Main analysis engine
  */
 export class GreenLintEngine {
@@ -124,12 +134,31 @@ export class GreenLintEngine {
   }
 
   /**
-   * Apply fixes to JSX/TSX source via targeted text splices computed from
-   * Babel node offsets, rather than mutating and re-serializing the whole
-   * AST (which would require a JSX-aware code generator and risks
-   * reformatting code well outside the fix itself).
+   * Compute targeted source-offset edits for a fix, without applying them
+   * or replacing the whole document. Only JSX/TSX is supported today -
+   * HTML fixes still require the mutate-and-reserialize approach in
+   * `applyHTMLFixes` (no offset-based edit list is computed for it), so
+   * this returns an empty array for HTML: callers should fall back to
+   * `applyFixes` in that case.
    */
-  private applyJSXFixes(sourceCode: string, issues: Issue[], isTypeScript: boolean): string {
+  computeEdits(filePath: string, sourceCode: string, issues: Issue[]): Edit[] {
+    const language = this.detectLanguage(filePath);
+
+    if (language === 'jsx' || language === 'tsx') {
+      return this.computeJSXEdits(sourceCode, issues, language === 'tsx');
+    }
+
+    return [];
+  }
+
+  /**
+   * Build the JSX/TSX edit list from Babel node offsets. Offsets are all
+   * computed against the original (untouched) source. Returned sorted
+   * highest-start-first, so that applying them sequentially - or any
+   * subset of them, in this order - never invalidates an earlier
+   * (smaller) offset.
+   */
+  private computeJSXEdits(sourceCode: string, issues: Issue[], isTypeScript: boolean): Edit[] {
     const ast = parseJSX(sourceCode, isTypeScript);
     const allImages = findAllJSXImages(ast);
 
@@ -144,17 +173,13 @@ export class GreenLintEngine {
           loc.column === issue.location.startColumn;
       });
 
-    // Each splice replaces source[start, end) with text (a point insertion
-    // has start === end). Since offsets are all computed against the
-    // original (untouched) source, applying them from the highest start
-    // down keeps every earlier offset valid.
-    const splices: Array<{ start: number; end: number; text: string }> = [];
+    const edits: Edit[] = [];
 
     for (const issue of lazyLoadingIssues) {
       const img = findImage(issue);
       if (img) {
         const offset = jsxOpeningTagInsertionOffset(img.openingElement);
-        splices.push({ start: offset, end: offset, text: ' loading="lazy"' });
+        edits.push({ start: offset, end: offset, text: ' loading="lazy"' });
       }
     }
 
@@ -164,21 +189,33 @@ export class GreenLintEngine {
         const src = getJSXAttribute(img.openingElement, 'src');
         if (src) {
           const webpSrc = this.computeWebPSrc(src);
-          splices.push({
+          edits.push({
             start: img.element.start!,
             end: img.element.start!,
             text: `<picture><source srcSet="${webpSrc}" type="image/webp" />`,
           });
-          splices.push({ start: img.element.end!, end: img.element.end!, text: '</picture>' });
+          edits.push({ start: img.element.end!, end: img.element.end!, text: '</picture>' });
         }
       }
     }
 
-    splices.sort((a, b) => b.start - a.start);
+    edits.sort((a, b) => b.start - a.start);
+
+    return edits;
+  }
+
+  /**
+   * Apply fixes to JSX/TSX source via targeted text splices, rather than
+   * mutating and re-serializing the whole AST (which would require a
+   * JSX-aware code generator and risks reformatting code well outside the
+   * fix itself).
+   */
+  private applyJSXFixes(sourceCode: string, issues: Issue[], isTypeScript: boolean): string {
+    const edits = this.computeJSXEdits(sourceCode, issues, isTypeScript);
 
     let result = sourceCode;
-    for (const splice of splices) {
-      result = result.slice(0, splice.start) + splice.text + result.slice(splice.end);
+    for (const edit of edits) {
+      result = result.slice(0, edit.start) + edit.text + result.slice(edit.end);
     }
 
     return result;

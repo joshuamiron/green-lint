@@ -88,12 +88,22 @@ function activate(context) {
             vscode.window.showInformationMessage('🌱 Green Lint: No issues to fix!');
             return;
         }
-        // Apply fixes
-        const fixedCode = await engine.applyFixes(document.fileName, sourceCode, issues);
-        // Replace entire document
+        // JSX/TSX: targeted offset edits instead of a whole-document replace,
+        // so the fix doesn't disturb anything outside it.
         const edit = new vscode.WorkspaceEdit();
-        const fullRange = new vscode.Range(document.positionAt(0), document.positionAt(sourceCode.length));
-        edit.replace(document.uri, fullRange, fixedCode);
+        const targetedEdits = engine.computeEdits(document.fileName, sourceCode, issues);
+        if (targetedEdits.length > 0) {
+            for (const targetedEdit of targetedEdits) {
+                const range = new vscode.Range(document.positionAt(targetedEdit.start), document.positionAt(targetedEdit.end));
+                edit.replace(document.uri, range, targetedEdit.text);
+            }
+        }
+        else {
+            // HTML: unchanged whole-document replace.
+            const fixedCode = await engine.applyFixes(document.fileName, sourceCode, issues);
+            const fullRange = new vscode.Range(document.positionAt(0), document.positionAt(sourceCode.length));
+            edit.replace(document.uri, fullRange, fixedCode);
+        }
         await vscode.workspace.applyEdit(edit);
         vscode.window.showInformationMessage(`🌱 Green Lint: Fixed ${issues.length} issue(s)!`);
     }));

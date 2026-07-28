@@ -39,29 +39,40 @@ export class GreenLintCodeActionProvider implements vscode.CodeActionProvider {
       if (issue && issue.fixes.length > 0) {
         // Create a code action for the preferred fix
         const preferredFix = issue.fixes.find(f => f.isPreferred) || issue.fixes[0];
-        
+
         const action = new vscode.CodeAction(
           `🌱 Green Lint: ${preferredFix.description}`,
           vscode.CodeActionKind.QuickFix
         );
-        
+
         action.diagnostics = [diagnostic];
         action.isPreferred = true;
-        
+
         // Create the edit
         action.edit = new vscode.WorkspaceEdit();
-        
-        // Apply all fixes to get the fixed code
-        const fixedCode = await this.engine.applyFixes(document.fileName, sourceCode, [issue]);
-        
-        // Replace the entire document
-        const fullRange = new vscode.Range(
-          document.positionAt(0),
-          document.positionAt(sourceCode.length)
-        );
-        
-        action.edit.replace(document.uri, fullRange, fixedCode);
-        
+
+        // JSX/TSX: targeted offset edits instead of a whole-document
+        // replace, so the fix doesn't disturb anything outside it.
+        const edits = this.engine.computeEdits(document.fileName, sourceCode, [issue]);
+
+        if (edits.length > 0) {
+          for (const edit of edits) {
+            const range = new vscode.Range(
+              document.positionAt(edit.start),
+              document.positionAt(edit.end)
+            );
+            action.edit.replace(document.uri, range, edit.text);
+          }
+        } else {
+          // HTML: unchanged whole-document replace.
+          const fixedCode = await this.engine.applyFixes(document.fileName, sourceCode, [issue]);
+          const fullRange = new vscode.Range(
+            document.positionAt(0),
+            document.positionAt(sourceCode.length)
+          );
+          action.edit.replace(document.uri, fullRange, fixedCode);
+        }
+
         actions.push(action);
       }
     }
