@@ -79,18 +79,36 @@ The VS Code extension provides real-time analysis with editor integration:
 
 ### Lighthouse Integration
 
-The Lighthouse plugin adds green software audits to your Lighthouse reports:
+The Lighthouse plugin adds green software audits to your Lighthouse reports. Lighthouse audits a **running page at a URL** — it can't read source files directly, so how you get a URL to point it at depends on what you're auditing.
 
+**One-time setup**, so Lighthouse can resolve the plugin by name from anywhere:
 ```bash
-# Link the plugin so Lighthouse can resolve it
 cd packages/lighthouse-plugin
 npm link
-
-# Run Lighthouse with the plugin, opening the HTML report when done
-lighthouse https://example.com --plugins=lighthouse-plugin-green-lint --view
 ```
 
-Lighthouse writes the report to whatever directory you're in when you run the command (not to `packages/lighthouse-plugin/`) unless you pass `--output-path`. Chrome opening and then closing on its own partway through is normal — Lighthouse automates it via DevTools Protocol and tears it down once the audit finishes; `--view` is what opens the finished report afterward.
+**For a React (or any dev-server-based) project** — run the project first, then audit the URL it prints:
+```bash
+# Terminal 1 - leave this running
+cd your-project
+npm run dev
+# → prints something like "Local: http://localhost:5173/"
+
+# Terminal 2 - once the dev server is up, replace the URL below with the one it printed
+lighthouse http://localhost:5173/ --plugins=lighthouse-plugin-green-lint --view
+```
+
+**For plain HTML files** — Lighthouse rejects `file://` URLs outright, so serve the folder first with any static file server, then audit that instead:
+```bash
+npx serve path/to/your/html/files
+# → prints something like "Accepting connections at http://localhost:3000"
+
+lighthouse http://localhost:3000/your-page.html --plugins=lighthouse-plugin-green-lint --view
+```
+
+Either way, Lighthouse writes the report to whatever directory you ran the command from (not to `packages/lighthouse-plugin/`) unless you pass `--output-path`. Chrome opening and then closing on its own partway through is normal — Lighthouse automates it via DevTools Protocol and tears it down once the audit finishes; `--view` is what opens the finished report afterward.
+
+This isn't limited to this repo's own test app — point it at any project's dev server or deployed URL the same way.
 
 ## Patterns & Research
 
