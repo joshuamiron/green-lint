@@ -86,9 +86,11 @@ The Lighthouse plugin adds green software audits to your Lighthouse reports:
 cd packages/lighthouse-plugin
 npm link
 
-# Run Lighthouse with the plugin
-lighthouse https://example.com --plugins=lighthouse-plugin-green-lint
+# Run Lighthouse with the plugin, opening the HTML report when done
+lighthouse https://example.com --plugins=lighthouse-plugin-green-lint --view
 ```
+
+Lighthouse writes the report to whatever directory you're in when you run the command (not to `packages/lighthouse-plugin/`) unless you pass `--output-path`. Chrome opening and then closing on its own partway through is normal — Lighthouse automates it via DevTools Protocol and tears it down once the audit finishes; `--view` is what opens the finished report afterward.
 
 ## Patterns & Research
 
@@ -220,6 +222,16 @@ See [green-lint-test-app/tests/pages](./green-lint-test-app/tests/pages/) for co
 
 - `UnoptimizedGallery` / `OptimizedGallery` - lazy loading and modern image formats
 - `UnoptimizedDOM` / `OptimizedDOM` - unnecessary wrapper elements
+
+All eight are also wired up as real, live React components (`green-lint-test-app/src/App.jsx`), so you can run them in a browser and audit them with Lighthouse - useful since Lighthouse audits rendered pages, not source files directly:
+
+```bash
+cd green-lint-test-app
+npm install
+npm run dev
+# in another terminal, once the dev server is up:
+lighthouse http://localhost:5173/ --plugins=lighthouse-plugin-green-lint --view
+```
 
 ## License
 
