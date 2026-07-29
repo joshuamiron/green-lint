@@ -98,7 +98,7 @@ npm run dev
 lighthouse http://localhost:5173/ --plugins=lighthouse-plugin-green-lint --view
 ```
 
-**For plain HTML files** — Lighthouse rejects `file://` URLs outright, so serve the folder first with any static file server, then audit that instead:
+**For plain HTML files** — serve the folder first with any static file server, then audit that instead:
 ```bash
 npx serve path/to/your/html/files
 # → prints something like "Accepting connections at http://localhost:3000"
@@ -106,9 +106,7 @@ npx serve path/to/your/html/files
 lighthouse http://localhost:3000/your-page.html --plugins=lighthouse-plugin-green-lint --view
 ```
 
-Either way, Lighthouse writes the report to whatever directory you ran the command from (not to `packages/lighthouse-plugin/`) unless you pass `--output-path`. Chrome opening and then closing on its own partway through is normal — Lighthouse automates it via DevTools Protocol and tears it down once the audit finishes; `--view` is what opens the finished report afterward.
-
-This isn't limited to this repo's own test app — point it at any project's dev server or deployed URL the same way.
+Lighthouse writes the report to whatever directory you ran the command from unless you pass `--output-path`. Chrome opening and then closing on its own partway through is normal — Lighthouse automates it via DevTools Protocol and tears it down once the audit finishes; `--view` is what opens the finished report afterward.
 
 ## Patterns & Research
 
