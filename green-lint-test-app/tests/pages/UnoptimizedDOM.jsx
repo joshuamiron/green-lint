@@ -1,7 +1,6 @@
-// Demonstrates excessive-dom's wrapper-removal check. (The "DOM has N
-// nodes" total-count check needs 1500+ nodes to trigger - impractical to
-// demonstrate in a small fixture, and the CLI doesn't load a config file
-// to lower the threshold - so it isn't exercised here.)
+// Demonstrates both excessive-dom checks: unnecessary wrapper elements,
+// and a real rendered DOM size well over the 1500-node "DOM has N nodes"
+// threshold (the bloat block below alone renders 1600+ elements).
 function UnoptimizedDOM() {
   return (
     <>
@@ -18,6 +17,16 @@ function UnoptimizedDOM() {
       <div className="content-wrapper">
         <p>This paragraph is unnecessarily wrapped in a single div.</p>
       </div>
+
+      {/* 800 x 2 = 1600 extra elements, pushing the real rendered DOM well
+          past the 1500-node threshold. Uses <ul>/<li>, not nested <div>s,
+          so this doesn't also trip the unnecessary-wrapper check above -
+          that one only looks at <div> elements. */}
+      <ul className="bloat">
+        {Array.from({ length: 800 }, (_, i) => (
+          <li key={i}><span>Item {i}</span></li>
+        ))}
+      </ul>
     </>
   );
 }
